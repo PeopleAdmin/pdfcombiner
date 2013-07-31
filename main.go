@@ -1,3 +1,4 @@
+// Benchmark parallel downloading and combination of some pdf files.
 package main
 
 import (
