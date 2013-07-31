@@ -5,6 +5,7 @@ import (
   "flag"
   "fmt"
   "time"
+  "net/http"
   "io/ioutil"
   "launchpad.net/goamz/aws"
   "launchpad.net/goamz/s3"
@@ -50,7 +51,7 @@ func printSummary(start time.Time, bytes int){
              bytes, len(doclist), seconds, mbps)
 }
 
-func main() {
+func combine() {
 
   flag.Parse()
   start := time.Now()
@@ -70,4 +71,19 @@ func main() {
   }
   printSummary(start,totalBytes)
 
+}
+
+func handle_req(w http.ResponseWriter, r *http.Request) {
+  fmt.Printf("got conn\n")
+  str := fmt.Sprintf("<html><body><head></head><h1>Time is %s</h1></body></html>", time.Now())
+  fmt.Fprintf(w, str)
+  fmt.Println("wrote",str)
+}
+// Exists only to prevent calls to favicon when testing the browser
+func noopConn(w http.ResponseWriter, r *http.Request) {}
+
+func main() {
+  http.HandleFunc("/favicon.ico", noopConn)
+  http.HandleFunc("/", handle_req)
+  http.ListenAndServe(":8080", nil)
 }
