@@ -2,7 +2,7 @@ package main
 
 import (
   "flag"
-
+  "fmt"
   "launchpad.net/goamz/aws"
   "launchpad.net/goamz/s3"
 )
@@ -16,6 +16,12 @@ func init() {
   flag.StringVar(&bucketName, "b", "", "Bucket Name")
 }
 
+func getFile(name string, c chan []byte) {
+
+}
+
+
+
 func main() {
 
   flag.Parse()
@@ -27,11 +33,13 @@ func main() {
   }
 
   // Open Bucket
-  s := s3.New(auth, aws.APNortheast)
+  s := s3.New(auth, aws.USEast)
   bucket := s.Bucket(bucketName)
 
-  data := []byte("Hello, Goamz!!")
-  err = bucket.Put("sample.txt", data, "text/plain", s3.BucketOwnerFull)
+  //#var data  []byte
+  data, err := bucket.Get("000.txt")
+  fmt.Println(len(data))
+  fmt.Printf("%s\n",data)
   if err != nil {
     panic(err.Error())
   }
