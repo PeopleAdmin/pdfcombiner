@@ -73,9 +73,24 @@ func combine() {
 
 }
 
+// This immediately writes a response to the calling channel, then does some
+// slow work (e.g. combining files). HTTP hangs up with the initial response
+// even through the goroutine continues to 'work'
+func doSomethingInBackground(c chan string) {
+  fmt.Println("starting goroutine")
+  str := "From goroutine: Time is " + time.Now().String()
+  c <- str
+  fmt.Println("goroutine sent message, starting slow work")
+  time.Sleep(5 * time.Second)
+  fmt.Println("done with goroutine")
+}
+
 func handle_req(w http.ResponseWriter, r *http.Request) {
   fmt.Printf("got conn\n")
-  str := fmt.Sprintf("<html><body><head></head><h1>Time is %s</h1></body></html>", time.Now())
+  c := make(chan string)
+  go doSomethingInBackground(c)
+  response := <-c
+  str := fmt.Sprintf("<html><body><head></head><h1>%s</h1></body></html>", response)
   fmt.Fprintf(w, str)
   fmt.Println("wrote",str)
 }
