@@ -1,6 +1,7 @@
 package main
 
 import (
+  "flag"
   "fmt"
   "time"
   "io/ioutil"
@@ -9,11 +10,17 @@ import (
 )
 
 var (
+  verbose bool
   bucketName = "pa-hrsuite-production"
   basedir = "/tmp/"
   keybase = "606/docs/"
-  doclist = []string{"100001.pdf","100009.pdf","100030.pdf","100035.pdf"}
+  doclist = []string{"100001.pdf","100009.pdf","100030.pdf","100035.pdf",
+                     "100035.pdf","100037.pdf","100038.pdf","100093.pdf",}
 )
+
+func init(){
+  flag.BoolVar(&verbose, "v", false, "Display extra data")
+}
 
 func getFile(bucket *s3.Bucket, docname string, c chan int) {
   s3key := keybase + docname
@@ -42,9 +49,9 @@ func printSummary(start time.Time, bytes int){
              bytes, len(doclist), seconds, mbps)
 }
 
-
 func main() {
 
+  flag.Parse()
   start := time.Now()
   bucket := connect()
   c := make(chan int)
@@ -55,7 +62,9 @@ func main() {
   totalBytes := 0
   for _,doc := range doclist{
     recieved := <-c
-    fmt.Printf("%s was %d bytes\n", doc,recieved)
+    if verbose{
+      fmt.Printf("%s was %d bytes\n", doc,recieved)
+    }
     totalBytes += recieved
   }
   printSummary(start,totalBytes)
