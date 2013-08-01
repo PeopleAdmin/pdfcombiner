@@ -15,7 +15,7 @@ var (
   basedir = "/tmp/"
   keybase = "606/docs/"
   defdocs = []string{"100001.pdf","100009.pdf","100030.pdf","100035.pdf",
-                     "100035.pdf","100037.pdf","100038.pdf","100093.pdf",}
+                     "100035.pdf","100037.pdf","100038.pdf","100093.pdf"}
 )
 
 func handleError(cb string) {
