@@ -30,8 +30,13 @@ func combineEndpoint(w http.ResponseWriter, r *http.Request) {
     http.Error(w, "Need some docs and a callback url", http.StatusBadRequest)
     return
   }
+  request := &pdfcombiner.CombineRequest{
+    BucketName: "pa-hrsuite-production",
+    EmployerId: "606",
+    DocList: docs,
+    Callback: callback }
+  go pdfcombiner.Combine(request)
   fmt.Fprintln(w, "Started combination on",docs)
-  go pdfcombiner.Combine(docs,callback)
 }
 
 func noopEndpoint(w http.ResponseWriter, r *http.Request) {}

@@ -9,6 +9,13 @@ import (
   "launchpad.net/goamz/s3"
 )
 
+type CombineRequest struct {
+  BucketName string
+  EmployerId string
+  DocList    []string
+  Callback   string
+}
+
 var (
   verbose bool
   bucketName = "pa-hrsuite-production"
@@ -65,41 +72,41 @@ func cpdfArgs(doclist []string) (args []string) {
   return
 }
 
-func mergeWithCpdf(doclist []string) {
+func mergeWithCpdf(req *CombineRequest) {
   cpdf, err := exec.LookPath("cpdf")
   if err != nil { log.Fatal("no cpdf") }
   combine_cmd := exec.Command(cpdf)
   combine_cmd.Dir = "/tmp"
-  combine_cmd.Args = cpdfArgs(doclist)
+  combine_cmd.Args = cpdfArgs(req.DocList)
   out, err := combine_cmd.Output()
   log.Println(string(out))
 }
 
-func getAllFiles(doclist []string, callback string) {
-  defer handleGenericError(callback)
+func getAllFiles(req *CombineRequest) {
+  defer handleGenericError(req.Callback)
   start := time.Now()
   bucket := connect()
   c := make(chan int)
-  for _,doc := range doclist{
+  for _,doc := range req.DocList{
     go getFile(bucket,doc,c)
   }
 
   totalBytes := 0
-  for _,doc := range doclist{
+  for _,doc := range req.DocList{
     recieved := <-c
     if verbose{
       log.Printf("%s was %d bytes\n", doc,recieved)
     }
     totalBytes += recieved
   }
-  printSummary(start,totalBytes,len(doclist))
+  printSummary(start,totalBytes,len(req.DocList))
 }
 
 // doclist is the list of pdfs to get, callback is the url to POST
 // the job status to when finished.
-func Combine(doclist []string, callback string) {
-  getAllFiles(doclist,callback)
-  mergeWithCpdf(doclist)
-  log.Println("work complete, posting success to callback:",callback)
+func Combine(req *CombineRequest) {
+  getAllFiles(req)
+  mergeWithCpdf(req)
+  log.Println("work complete, posting success to callback:",req.Callback)
 }
 
