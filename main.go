@@ -4,12 +4,20 @@ package main
 import (
   "pdfcombiner/combiner"
   "net/http"
+  "net/url"
   "fmt"
 )
 
+// Validate that the required URL params are present and correct.
 func check_params(params map[string] []string ) (docs []string, callback string, ok bool) {
-  callback = "http://example.com/postback"
-  docs, ok = params["docs"]
+  callbacks := params["callback"]
+  if len(callbacks) < 1 {
+    return
+  }
+  callback = callbacks[0]
+  _, parseErr := url.Parse(callback)
+  docs, docsPresent := params["docs"]
+  ok = docsPresent && (parseErr == nil)
   return
 }
 
@@ -20,6 +28,7 @@ func handle_req(w http.ResponseWriter, r *http.Request) {
   docs, callback, ok := check_params(params)
   if !ok {
     http.Error(w, "Need some docs and a callback url", http.StatusBadRequest)
+    return
   }
   fmt.Fprintln(w, "Started combination on",docs)
   go pdfcombiner.Combine(docs,callback)
