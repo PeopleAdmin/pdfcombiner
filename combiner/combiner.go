@@ -18,14 +18,14 @@ var (
                      "100035.pdf","100037.pdf","100038.pdf","100093.pdf"}
 )
 
-func handleError(cb string) {
+func handleError(cb, doc string) {
   if err := recover(); err != nil {
-    log.Println("work failed, posting error to callback",cb, err)
+    log.Printf("work failed on doc %s, posting error '%s' to callback",doc, err)
   }
 }
 
 func getFile(bucket *s3.Bucket, docname string, c chan int) {
-  defer handleError("http://callback.com")
+  defer handleError("http://callback.com", docname)
   s3key := keybase + docname
   data, err := bucket.Get(s3key)
   if err != nil { panic(err) }
