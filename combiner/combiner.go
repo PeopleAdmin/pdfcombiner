@@ -3,6 +3,7 @@ package pdfcombiner
 import (
   "time"
   "log"
+  "fmt"
   "os/exec"
   "io/ioutil"
   "launchpad.net/goamz/aws"
@@ -14,6 +15,8 @@ type CombineRequest struct {
   EmployerId string
   DocList    []string
   Callback   string
+  Errors     []string
+  Bucket     *s3.Bucket
 }
 
 var (
@@ -25,21 +28,25 @@ var (
                      "100035.pdf","100037.pdf","100038.pdf","100093.pdf"}
 )
 
-func handleGenericError(cb string) {
+func handleGenericError(req *CombineRequest) {
   if err := recover(); err != nil {
-    log.Printf("failed", err)
+    msg := fmt.Sprintf("failed: %s", err)
+    req.Errors = append(req.Errors, msg)
+    log.Println(msg)
   }
 }
-func handleGetError(cb, doc string) {
+func handleGetError(req *CombineRequest, doc string) {
   if err := recover(); err != nil {
-    log.Printf("work failed while getting doc %s, posting error '%s' to callback",doc, err)
+    msg := fmt.Sprintf("failed while getting doc %s: '%s'",doc, err)
+    req.Errors = append(req.Errors, msg)
+    log.Println(msg)
   }
 }
 
-func getFile(bucket *s3.Bucket, docname string, c chan int) {
-  defer handleGetError("http://callback.com", docname)
+func getFile(req *CombineRequest, docname string, c chan int) {
+  defer handleGetError(req, docname)
   s3key := keybase + docname
-  data, err := bucket.Get(s3key)
+  data, err := req.Bucket.Get(s3key)
   if err != nil { panic(err) }
 
   path := "/tmp/"+docname
@@ -83,12 +90,12 @@ func mergeWithCpdf(req *CombineRequest) {
 }
 
 func getAllFiles(req *CombineRequest) {
-  defer handleGenericError(req.Callback)
+  defer handleGenericError(req)
   start := time.Now()
-  bucket := connect()
+  req.Bucket = connect()
   c := make(chan int)
   for _,doc := range req.DocList{
-    go getFile(bucket,doc,c)
+    go getFile(req,doc,c)
   }
 
   totalBytes := 0
@@ -102,11 +109,14 @@ func getAllFiles(req *CombineRequest) {
   printSummary(start,totalBytes,len(req.DocList))
 }
 
-// doclist is the list of pdfs to get, callback is the url to POST
-// the job status to when finished.
+func postToCallback(req *CombineRequest) {
+  log.Println("work complete, posting success to callback:",req.Callback)
+  log.Println(req)
+}
+
 func Combine(req *CombineRequest) {
+  defer postToCallback(req)
   getAllFiles(req)
   mergeWithCpdf(req)
-  log.Println("work complete, posting success to callback:",req.Callback)
 }
 
