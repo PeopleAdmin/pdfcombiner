@@ -22,7 +22,7 @@ func check_params(params map[string] []string ) (docs []string, callback string,
 }
 
 // Looks for one or more ?docs=FILE params and if found starts combination.
-func handle_req(w http.ResponseWriter, r *http.Request) {
+func combineEndpoint(w http.ResponseWriter, r *http.Request) {
   r.ParseForm()
   params := r.Form
   docs, callback, ok := check_params(params)
@@ -34,11 +34,11 @@ func handle_req(w http.ResponseWriter, r *http.Request) {
   go pdfcombiner.Combine(docs,callback)
 }
 
-// Exists only to prevent calls to favicon when testing the browser
-func noopConn(w http.ResponseWriter, r *http.Request) {}
+func noopEndpoint(w http.ResponseWriter, r *http.Request) {}
 
 func main() {
-  http.HandleFunc("/favicon.ico", noopConn)
-  http.HandleFunc("/", handle_req)
+  http.HandleFunc("/favicon.ico", noopEndpoint)
+  http.HandleFunc("/health_check.html", noopEndpoint)
+  http.HandleFunc("/", combineEndpoint)
   http.ListenAndServe(":8080", nil)
 }
