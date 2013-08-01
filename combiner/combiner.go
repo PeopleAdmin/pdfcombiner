@@ -1,7 +1,6 @@
 package pdfcombiner
 
 import (
-  "fmt"
   "time"
   "log"
   "os/exec"
@@ -21,7 +20,7 @@ var (
 
 func handleError(cb string) {
   if err := recover(); err != nil {
-    fmt.Println("work failed, posting error to callback",cb, err)
+    log.Println("work failed, posting error to callback",cb, err)
   }
 }
 
@@ -49,7 +48,7 @@ func printSummary(start time.Time, bytes int, count int){
   elapsed := time.Since(start)
   seconds := elapsed.Seconds()
   mbps := float64(bytes) / 1024 / 1024 / seconds
-  fmt.Printf("got %d bytes over %d files in %f secs (%f MB/s)\n",
+  log.Printf("got %d bytes over %d files in %f secs (%f MB/s)\n",
              bytes, count, seconds, mbps)
 }
 
@@ -84,7 +83,7 @@ func getAllFiles(doclist []string, callback string) {
   for _,doc := range doclist{
     recieved := <-c
     if verbose{
-      fmt.Printf("%s was %d bytes\n", doc,recieved)
+      log.Printf("%s was %d bytes\n", doc,recieved)
     }
     totalBytes += recieved
   }
@@ -96,5 +95,6 @@ func getAllFiles(doclist []string, callback string) {
 func Combine(doclist []string, callback string) {
   getAllFiles(doclist,callback)
   mergeWithCpdf(doclist)
+  log.Println("work complete, posting success to callback:",callback)
 }
 
