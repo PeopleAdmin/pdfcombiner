@@ -16,7 +16,7 @@ var (
   bucketName = "pa-hrsuite-production"
   basedir = "/tmp/"
   keybase = "606/docs/"
-  doclist = []string{"100001.pdf","100009.pdf","100030.pdf","100035.pdf",
+  defdocs = []string{"100001.pdf","100009.pdf","100030.pdf","100035.pdf",
                      "100035.pdf","100037.pdf","100038.pdf","100093.pdf",}
 )
 
@@ -24,7 +24,14 @@ func init(){
   flag.BoolVar(&verbose, "v", false, "Display extra data")
 }
 
+func handleError(cb string) {
+  if err := recover(); err != nil {
+    fmt.Println("work failed, posting error to callback",cb, err)
+  }
+}
+
 func getFile(bucket *s3.Bucket, docname string, c chan int) {
+  defer handleError("http://callback.com")
   s3key := keybase + docname
   data, err := bucket.Get(s3key)
   if err != nil { panic(err) }
@@ -43,15 +50,15 @@ func connect() *s3.Bucket {
   return s.Bucket(bucketName)
 }
 
-func printSummary(start time.Time, bytes int){
+func printSummary(start time.Time, bytes int, count int){
   elapsed := time.Since(start)
   seconds := elapsed.Seconds()
   mbps := float64(bytes) / 1024 / 1024 / seconds
   fmt.Printf("got %d bytes over %d files in %f secs (%f MB/s)\n",
-             bytes, len(doclist), seconds, mbps)
+             bytes, count, seconds, mbps)
 }
 
-func combine() {
+func combine(doclist []string, callback string) {
 
   flag.Parse()
   start := time.Now()
@@ -69,31 +76,38 @@ func combine() {
     }
     totalBytes += recieved
   }
-  printSummary(start,totalBytes)
+  printSummary(start,totalBytes,len(doclist))
 
 }
 
 // This immediately writes a response to the calling channel, then does some
 // slow work (e.g. combining files). HTTP hangs up with the initial response
 // even through the goroutine continues to 'work'
-func doSomethingInBackground(c chan string) {
+func doSomethingInBackground() {
   fmt.Println("starting goroutine")
-  str := "From goroutine: Time is " + time.Now().String()
-  c <- str
-  fmt.Println("goroutine sent message, starting slow work")
   time.Sleep(5 * time.Second)
   fmt.Println("done with goroutine")
 }
 
-func handle_req(w http.ResponseWriter, r *http.Request) {
-  fmt.Printf("got conn\n")
-  c := make(chan string)
-  go doSomethingInBackground(c)
-  response := <-c
-  str := fmt.Sprintf("<html><body><head></head><h1>%s</h1></body></html>", response)
-  fmt.Fprintf(w, str)
-  fmt.Println("wrote",str)
+func check_params(params map[string] []string ) (docs []string, callback string, ok bool) {
+  callback = "http://example.com/postback"
+  docs, ok = params["docs"]
+  return
 }
+
+
+// Looks for one or more ?docs=FILE params and if found starts combination.
+func handle_req(w http.ResponseWriter, r *http.Request) {
+  r.ParseForm()
+  params := r.Form
+  docs, callback, ok := check_params(params)
+  if !ok {
+    http.Error(w, "Need some docs and a callback url", http.StatusBadRequest)
+  }
+  fmt.Fprintln(w, "Started combination on",docs)
+  go combine(docs,callback)
+}
+
 // Exists only to prevent calls to favicon when testing the browser
 func noopConn(w http.ResponseWriter, r *http.Request) {}
 
