@@ -2,9 +2,10 @@
 package main
 
 import (
-  "flag"
   "fmt"
   "time"
+  "log"
+  "os/exec"
   "net/http"
   "io/ioutil"
   "launchpad.net/goamz/aws"
@@ -19,10 +20,6 @@ var (
   defdocs = []string{"100001.pdf","100009.pdf","100030.pdf","100035.pdf",
                      "100035.pdf","100037.pdf","100038.pdf","100093.pdf",}
 )
-
-func init(){
-  flag.BoolVar(&verbose, "v", false, "Display extra data")
-}
 
 func handleError(cb string) {
   if err := recover(); err != nil {
@@ -58,9 +55,26 @@ func printSummary(start time.Time, bytes int, count int){
              bytes, count, seconds, mbps)
 }
 
-func combine(doclist []string, callback string) {
+func cpdfArgs(doclist []string) (args []string) {
+  args = []string{"merge"}
+  for _,doc := range doclist{
+    args = append(args, doc)
+  }
+  args = append(args, "-o", "combined.pdf")
+  return
+}
 
-  flag.Parse()
+func mergeWithCpdf(doclist []string) {
+  cpdf, err := exec.LookPath("cpdf")
+  if err != nil { log.Fatal("no cpdf") }
+  combine_cmd := exec.Command(cpdf)
+  combine_cmd.Dir = "/tmp"
+  combine_cmd.Args = cpdfArgs(doclist)
+  out, err := combine_cmd.Output()
+  log.Println(string(out))
+}
+
+func getAllFiles(doclist []string, callback string) {
   start := time.Now()
   bucket := connect()
   c := make(chan int)
@@ -77,16 +91,13 @@ func combine(doclist []string, callback string) {
     totalBytes += recieved
   }
   printSummary(start,totalBytes,len(doclist))
-
 }
 
-// This immediately writes a response to the calling channel, then does some
-// slow work (e.g. combining files). HTTP hangs up with the initial response
-// even through the goroutine continues to 'work'
-func doSomethingInBackground() {
-  fmt.Println("starting goroutine")
-  time.Sleep(5 * time.Second)
-  fmt.Println("done with goroutine")
+// doclist is the list of pdfs to get, callback is the url to POST
+// the job status to when finished.
+func combine(doclist []string, callback string) {
+  getAllFiles(doclist,callback)
+  mergeWithCpdf(doclist)
 }
 
 func check_params(params map[string] []string ) (docs []string, callback string, ok bool) {
@@ -94,7 +105,6 @@ func check_params(params map[string] []string ) (docs []string, callback string,
   docs, ok = params["docs"]
   return
 }
-
 
 // Looks for one or more ?docs=FILE params and if found starts combination.
 func handle_req(w http.ResponseWriter, r *http.Request) {
