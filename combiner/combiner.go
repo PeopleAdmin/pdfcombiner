@@ -18,14 +18,19 @@ var (
                      "100035.pdf","100037.pdf","100038.pdf","100093.pdf"}
 )
 
-func handleError(cb, doc string) {
+func handleGenericError(cb string) {
   if err := recover(); err != nil {
-    log.Printf("work failed on doc %s, posting error '%s' to callback",doc, err)
+    log.Printf("failed", err)
+  }
+}
+func handleGetError(cb, doc string) {
+  if err := recover(); err != nil {
+    log.Printf("work failed while getting doc %s, posting error '%s' to callback",doc, err)
   }
 }
 
 func getFile(bucket *s3.Bucket, docname string, c chan int) {
-  defer handleError("http://callback.com", docname)
+  defer handleGetError("http://callback.com", docname)
   s3key := keybase + docname
   data, err := bucket.Get(s3key)
   if err != nil { panic(err) }
@@ -34,7 +39,6 @@ func getFile(bucket *s3.Bucket, docname string, c chan int) {
   err = ioutil.WriteFile(path, data, 0644)
   if err != nil { panic(err) }
   c <- len(data)
-
 }
 
 func connect() *s3.Bucket {
@@ -72,6 +76,7 @@ func mergeWithCpdf(doclist []string) {
 }
 
 func getAllFiles(doclist []string, callback string) {
+  defer handleGenericError(callback)
   start := time.Now()
   bucket := connect()
   c := make(chan int)
