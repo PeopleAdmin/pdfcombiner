@@ -36,7 +36,9 @@ func (c CombinerServer) ProcessCombineRequest(w http.ResponseWriter, r *http.Req
     EmployerId: "606",
     DocList: docs,
     Callback: callback }
-  go pdfcombiner.Combine(request)
+  if len(params["test"]) == 0 {
+    go pdfcombiner.Combine(request)
+  }
   fmt.Fprintln(w, "Started combination on",docs)
 }
 
