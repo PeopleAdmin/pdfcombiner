@@ -7,6 +7,8 @@ import (
   "fmt"
 )
 
+type CombinerServer struct {}
+
 // Validate that the required URL params are present and correct.
 func check_params(params map[string] []string ) (docs []string, callback string, ok bool) {
   callbacks := params["callback"]
@@ -21,7 +23,7 @@ func check_params(params map[string] []string ) (docs []string, callback string,
 }
 
 // Looks for one or more ?docs=FILE params and if found starts combination.
-func CombineEndpoint(w http.ResponseWriter, r *http.Request) {
+func (c CombinerServer) ProcessCombineRequest(w http.ResponseWriter, r *http.Request) {
   r.ParseForm()
   params := r.Form
   docs, callback, ok := check_params(params)
@@ -38,4 +40,4 @@ func CombineEndpoint(w http.ResponseWriter, r *http.Request) {
   fmt.Fprintln(w, "Started combination on",docs)
 }
 
-func NoopEndpoint(w http.ResponseWriter, r *http.Request) {}
+func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {}

@@ -7,8 +7,9 @@ import (
 )
 
 func main() {
-  http.HandleFunc("/favicon.ico", pdfcombiner.NoopEndpoint)
-  http.HandleFunc("/health_check.html", pdfcombiner.NoopEndpoint)
-  http.HandleFunc("/", pdfcombiner.CombineEndpoint)
+  server := new(pdfcombiner.CombinerServer)
+  http.HandleFunc("/favicon.ico", server.Ping)
+  http.HandleFunc("/health_check.html", server.Ping)
+  http.HandleFunc("/", server.ProcessCombineRequest)
   http.ListenAndServe(":8080", nil)
 }
