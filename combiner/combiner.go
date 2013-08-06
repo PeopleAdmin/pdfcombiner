@@ -11,7 +11,7 @@ import (
 )
 
 var (
-  verbose bool
+  verbose = true
   bucketName = "pa-hrsuite-production"
   basedir = "/tmp/"
   keybase = "606/docs/"
@@ -21,17 +21,24 @@ var (
 
 type Job struct {
   BucketName string
-  EmployerId string
+  EmployerId int
   DocList    []string
   Callback   string
   Errors     []string
   Bucket     *s3.Bucket
 }
 
+type stat struct {
+  filename string
+  size     int
+  dlSecs   time.Duration
+  err      error
+}
+
 func (j *Job) IsValid() bool {
  return (j.BucketName != "") &&
-        (j.EmployerId != "") &&
         (j.Callback   != "") &&
+        (j.EmployerId > 0)   &&
         (j.DocCount() > 0)
 }
 
@@ -62,23 +69,29 @@ func (j *Job) connect() {
   j.Bucket = s.Bucket(bucketName)
 }
 
-func (j *Job) getFile(docname string, c chan int) {
+func (j *Job) getFile(docname string, c chan stat) {
   defer j.handleGetError(docname)
-  s3key := keybase + docname
-  data, err := j.Bucket.Get(s3key)
+  start := time.Now()
+  data, err := j.Bucket.Get(j.s3Path(docname))
   if err != nil { panic(err) }
 
   path := "/tmp/"+docname
   err = ioutil.WriteFile(path, data, 0644)
   if err != nil { panic(err) }
-  c <- len(data)
+  c <- stat{ filename: docname,
+             size: len(data),
+             dlSecs: time.Since(start) }
+}
+
+func (j *Job) s3Path(docname string) string {
+  return fmt.Sprintf("%d/docs/%s", j.EmployerId, docname)
 }
 
 func (j *Job) getAllFiles() {
   defer j.handleGenericError()
   start := time.Now()
   j.connect()
-  c := make(chan int)
+  c := make(chan stat)
   for _,doc := range j.DocList{
     go j.getFile(doc,c)
   }
@@ -87,11 +100,11 @@ func (j *Job) getAllFiles() {
   printSummary(start, totalBytes, j.DocCount())
 }
 
-func (j *Job) waitForDownloads(c chan int) (totalBytes int) {
-  for _,doc := range j.DocList{
-    recieved := <-c
-    if verbose { log.Printf("%s was %d bytes\n", doc,recieved) }
-    totalBytes += recieved
+func (j *Job) waitForDownloads(c chan stat) (totalBytes int) {
+  for _,_ = range j.DocList{
+    packet := <-c
+    if verbose { log.Printf("%s was %d bytes\n", packet.filename,packet.size) }
+    totalBytes += packet.size
   }
   return
 }
