@@ -4,10 +4,10 @@ import (
   "time"
   "log"
   "fmt"
-  "os/exec"
   "io/ioutil"
   "launchpad.net/goamz/aws"
   "launchpad.net/goamz/s3"
+  cpdf "pdfcombiner/cpdf"
 )
 
 var (
@@ -82,25 +82,6 @@ func printSummary(start time.Time, bytes int, count int){
              bytes, count, seconds, mbps)
 }
 
-func cpdfArgs(doclist []string) (args []string) {
-  args = []string{"merge"}
-  for _,doc := range doclist{
-    args = append(args, doc)
-  }
-  args = append(args, "-o", "combined.pdf")
-  return
-}
-
-func mergeWithCpdf(req *Job) {
-  cpdf, err := exec.LookPath("cpdf")
-  if err != nil { log.Fatal("no cpdf") }
-  combine_cmd := exec.Command(cpdf)
-  combine_cmd.Dir = "/tmp"
-  combine_cmd.Args = cpdfArgs(req.DocList)
-  out, err := combine_cmd.Output()
-  log.Println(string(out))
-}
-
 func (j *Job) getAllFiles() {
   defer j.handleGenericError()
   start := time.Now()
@@ -129,7 +110,7 @@ func (j *Job) postToCallback(){
 func (j *Job) Combine() bool {
   defer j.postToCallback()
   j.getAllFiles()
-  mergeWithCpdf(j)
+  cpdf.Merge(j.DocList)
   return true
 }
 
