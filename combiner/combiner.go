@@ -10,15 +10,6 @@ import (
   "launchpad.net/goamz/s3"
 )
 
-type CombineRequest struct {
-  BucketName string
-  EmployerId string
-  DocList    []string
-  Callback   string
-  Errors     []string
-  Bucket     *s3.Bucket
-}
-
 var (
   verbose bool
   bucketName = "pa-hrsuite-production"
@@ -28,14 +19,35 @@ var (
                      "100035.pdf","100037.pdf","100038.pdf","100093.pdf"}
 )
 
-func handleGenericError(req *CombineRequest) {
+type Job struct {
+  BucketName string
+  EmployerId string
+  DocList    []string
+  Callback   string
+  Errors     []string
+  Bucket     *s3.Bucket
+}
+
+func (j *Job) IsValid() bool {
+ return (j.BucketName != "") &&
+        (j.EmployerId != "") &&
+        (j.Callback   != "") &&
+        (j.DocCount() > 0)
+}
+
+func (j *Job) DocCount() int {
+  return len(j.DocList)
+}
+
+func (j *Job) handleGenericError() {
   if err := recover(); err != nil {
     msg := fmt.Sprintf("failed: %s", err)
-    req.Errors = append(req.Errors, msg)
+    j.Errors = append(j.Errors, msg)
     log.Println(msg)
   }
 }
-func handleGetError(req *CombineRequest, doc string) {
+
+func handleGetError(req *Job, doc string) {
   if err := recover(); err != nil {
     msg := fmt.Sprintf("failed while getting doc %s: '%s'",doc, err)
     req.Errors = append(req.Errors, msg)
@@ -43,7 +55,7 @@ func handleGetError(req *CombineRequest, doc string) {
   }
 }
 
-func getFile(req *CombineRequest, docname string, c chan int) {
+func getFile(req *Job, docname string, c chan int) {
   defer handleGetError(req, docname)
   s3key := keybase + docname
   data, err := req.Bucket.Get(s3key)
@@ -55,11 +67,11 @@ func getFile(req *CombineRequest, docname string, c chan int) {
   c <- len(data)
 }
 
-func connect() *s3.Bucket {
+func (j *Job) connect() {
   auth, err := aws.EnvAuth()
   if err != nil { panic(err) }
   s := s3.New(auth, aws.USEast)
-  return s.Bucket(bucketName)
+  j.Bucket = s.Bucket(bucketName)
 }
 
 func printSummary(start time.Time, bytes int, count int){
@@ -79,7 +91,7 @@ func cpdfArgs(doclist []string) (args []string) {
   return
 }
 
-func mergeWithCpdf(req *CombineRequest) {
+func mergeWithCpdf(req *Job) {
   cpdf, err := exec.LookPath("cpdf")
   if err != nil { log.Fatal("no cpdf") }
   combine_cmd := exec.Command(cpdf)
@@ -89,34 +101,35 @@ func mergeWithCpdf(req *CombineRequest) {
   log.Println(string(out))
 }
 
-func getAllFiles(req *CombineRequest) {
-  defer handleGenericError(req)
+func (j *Job) getAllFiles() {
+  defer j.handleGenericError()
   start := time.Now()
-  req.Bucket = connect()
+  j.connect()
   c := make(chan int)
-  for _,doc := range req.DocList{
-    go getFile(req,doc,c)
+  for _,doc := range j.DocList{
+    go getFile(j,doc,c)
   }
 
   totalBytes := 0
-  for _,doc := range req.DocList{
+  for _,doc := range j.DocList{
     recieved := <-c
     if verbose{
       log.Printf("%s was %d bytes\n", doc,recieved)
     }
     totalBytes += recieved
   }
-  printSummary(start,totalBytes,len(req.DocList))
+  printSummary(start, totalBytes, j.DocCount())
 }
 
-func postToCallback(req *CombineRequest) {
-  log.Println("work complete, posting success to callback:",req.Callback)
-  log.Println(req)
+func (j *Job) postToCallback(){
+  log.Println("work complete, posting success to callback:",j.Callback)
+  log.Println(j)
 }
 
-func Combine(req *CombineRequest) {
-  defer postToCallback(req)
-  getAllFiles(req)
-  mergeWithCpdf(req)
+func (j *Job) Combine() bool {
+  defer j.postToCallback()
+  j.getAllFiles()
+  mergeWithCpdf(j)
+  return true
 }
 

@@ -3,43 +3,30 @@ package pdfcombiner
 import (
   "pdfcombiner/combiner"
   "net/http"
-  "net/url"
   "fmt"
+  "encoding/json"
 )
 
 type CombinerServer struct {}
 
-// Validate that the required URL params are present and correct.
-func check_params(params map[string] []string ) (docs []string, callback string, ok bool) {
-  callbacks := params["callback"]
-  if len(callbacks) < 1 {
-    return
-  }
-  callback = callbacks[0]
-  _, parseErr := url.Parse(callback)
-  docs, docsPresent := params["docs"]
-  ok = docsPresent && (parseErr == nil)
+var InvalidParamsMessage = "{\"response\":\"invalid params\"}"
+
+func decodeParams(r *http.Request) (job *pdfcombiner.Job, err error){
+  job = &pdfcombiner.Job{}
+  decoder := json.NewDecoder(r.Body)
+  err = decoder.Decode(job)
+  fmt.Println(job)
   return
 }
 
-// Looks for one or more ?docs=FILE params and if found starts combination.
-func (c CombinerServer) ProcessCombineRequest(w http.ResponseWriter, r *http.Request) {
-  r.ParseForm()
-  params := r.Form
-  docs, callback, ok := check_params(params)
-  if !ok {
-    http.Error(w, "Need some docs and a callback url", http.StatusBadRequest)
+func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
+  job, err := decodeParams(r)
+  if err != nil || !job.IsValid() {
+    http.Error(w, InvalidParamsMessage, http.StatusBadRequest)
     return
   }
-  request := &pdfcombiner.CombineRequest{
-    BucketName: "pa-hrsuite-production",
-    EmployerId: "606",
-    DocList: docs,
-    Callback: callback }
-  if len(params["test"]) == 0 {
-    go pdfcombiner.Combine(request)
-  }
-  fmt.Fprintln(w, "Started combination on",docs)
+  go job.Combine()
 }
 
 func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {}
+

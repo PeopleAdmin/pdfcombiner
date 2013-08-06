@@ -21,19 +21,20 @@ func TestPing(t *testing.T) {
 	assert.Equal(t, 200, recorder.Code)
 	assert.Equal(t, "", recorder.Body.String())
 }
-
+//TODO broken by change to JSON POST
 func TestProcessCombineRequestRejectsInvalidRequest(t *testing.T) {
   recorder := httptest.NewRecorder()
-  req, _:= http.NewRequest("GET", "http://example.com/", nil)
-	handler.ProcessCombineRequest(recorder, req)
+  req, _:= http.NewRequest("GET", "http://example.com/", nil)  // nil ref here
+	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 400, recorder.Code)
 	assert.Equal(t, invalidMsg, recorder.Body.String())
 }
 
+//TODO broken by change to JSON POST
 func TestProcessCombineRequestAcceptsValidRequest(t *testing.T) {
   recorder := httptest.NewRecorder()
   req, _:= http.NewRequest("GET", "http://example.com/"+validParams, nil)
-	handler.ProcessCombineRequest(recorder, req)
+	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 200, recorder.Code)
 	assert.Equal(t, validMsg, recorder.Body.String())
 }
