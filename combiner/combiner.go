@@ -47,18 +47,18 @@ func (j *Job) handleGenericError() {
   }
 }
 
-func handleGetError(req *Job, doc string) {
+func (j *Job) handleGetError(doc string) {
   if err := recover(); err != nil {
     msg := fmt.Sprintf("failed while getting doc %s: '%s'",doc, err)
-    req.Errors = append(req.Errors, msg)
+    j.Errors = append(j.Errors, msg)
     log.Println(msg)
   }
 }
 
-func getFile(req *Job, docname string, c chan int) {
-  defer handleGetError(req, docname)
+func (j *Job) getFile(docname string, c chan int) {
+  defer j.handleGetError(docname)
   s3key := keybase + docname
-  data, err := req.Bucket.Get(s3key)
+  data, err := j.Bucket.Get(s3key)
   if err != nil { panic(err) }
 
   path := "/tmp/"+docname
@@ -88,18 +88,20 @@ func (j *Job) getAllFiles() {
   j.connect()
   c := make(chan int)
   for _,doc := range j.DocList{
-    go getFile(j,doc,c)
+    go j.getFile(doc,c)
   }
 
-  totalBytes := 0
+  totalBytes := j.waitForDownloads(c)
+  printSummary(start, totalBytes, j.DocCount())
+}
+
+func (j *Job) waitForDownloads(c chan int) (totalBytes int) {
   for _,doc := range j.DocList{
     recieved := <-c
-    if verbose{
-      log.Printf("%s was %d bytes\n", doc,recieved)
-    }
+    if verbose { log.Printf("%s was %d bytes\n", doc,recieved) }
     totalBytes += recieved
   }
-  printSummary(start, totalBytes, j.DocCount())
+  return
 }
 
 func (j *Job) postToCallback(){
