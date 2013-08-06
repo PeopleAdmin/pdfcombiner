@@ -55,6 +55,13 @@ func (j *Job) handleGetError(doc string) {
   }
 }
 
+func (j *Job) connect() {
+  auth, err := aws.EnvAuth()
+  if err != nil { panic(err) }
+  s := s3.New(auth, aws.USEast)
+  j.Bucket = s.Bucket(bucketName)
+}
+
 func (j *Job) getFile(docname string, c chan int) {
   defer j.handleGetError(docname)
   s3key := keybase + docname
@@ -65,21 +72,6 @@ func (j *Job) getFile(docname string, c chan int) {
   err = ioutil.WriteFile(path, data, 0644)
   if err != nil { panic(err) }
   c <- len(data)
-}
-
-func (j *Job) connect() {
-  auth, err := aws.EnvAuth()
-  if err != nil { panic(err) }
-  s := s3.New(auth, aws.USEast)
-  j.Bucket = s.Bucket(bucketName)
-}
-
-func printSummary(start time.Time, bytes int, count int){
-  elapsed := time.Since(start)
-  seconds := elapsed.Seconds()
-  mbps := float64(bytes) / 1024 / 1024 / seconds
-  log.Printf("got %d bytes over %d files in %f secs (%f MB/s)\n",
-             bytes, count, seconds, mbps)
 }
 
 func (j *Job) getAllFiles() {
@@ -102,6 +94,14 @@ func (j *Job) waitForDownloads(c chan int) (totalBytes int) {
     totalBytes += recieved
   }
   return
+}
+
+func printSummary(start time.Time, bytes int, count int){
+  elapsed := time.Since(start)
+  seconds := elapsed.Seconds()
+  mbps := float64(bytes) / 1024 / 1024 / seconds
+  log.Printf("got %d bytes over %d files in %f secs (%f MB/s)\n",
+             bytes, count, seconds, mbps)
 }
 
 func (j *Job) postToCallback(){
