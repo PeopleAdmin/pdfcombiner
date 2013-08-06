@@ -1,4 +1,4 @@
-package pdfcombiner
+package cpdf
 
 import(
   "os/exec"

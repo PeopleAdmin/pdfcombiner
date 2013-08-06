@@ -1,4 +1,4 @@
-package pdfcombiner
+package server
 
 import (
 "net/http"

@@ -1,4 +1,4 @@
-package pdfcombiner
+package server
 
 import (
   "pdfcombiner/combiner"
@@ -11,8 +11,8 @@ type CombinerServer struct {}
 
 var InvalidParamsMessage = "{\"response\":\"invalid params\"}"
 
-func decodeParams(r *http.Request) (job *pdfcombiner.Job, err error){
-  job = &pdfcombiner.Job{}
+func decodeParams(r *http.Request) (job *combiner.Job, err error){
+  job = &combiner.Job{}
   decoder := json.NewDecoder(r.Body)
   err = decoder.Decode(job)
   fmt.Println(job)

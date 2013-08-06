@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-  server := new(pdfcombiner.CombinerServer)
+  server := new(server.CombinerServer)
   http.HandleFunc("/favicon.ico", server.Ping)
   http.HandleFunc("/health_check.html", server.Ping)
   http.HandleFunc("/", server.ProcessJob)

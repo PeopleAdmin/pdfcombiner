@@ -1,4 +1,4 @@
-package pdfcombiner
+package combiner
 
 import (
   "time"
@@ -7,7 +7,7 @@ import (
   "io/ioutil"
   "launchpad.net/goamz/aws"
   "launchpad.net/goamz/s3"
-  cpdf "pdfcombiner/cpdf"
+  "pdfcombiner/cpdf"
 )
 
 var (
