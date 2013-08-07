@@ -34,6 +34,10 @@ func (j *Job) DocCount() int {
   return len(j.DocList)
 }
 
+func (j *Job) CompleteCount() int {
+  return len(j.Downloaded)
+}
+
 func (j *Job) MarkComplete(newdoc string) {
   j.Downloaded = append(j.Downloaded, newdoc)
 }

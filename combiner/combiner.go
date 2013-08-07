@@ -53,7 +53,7 @@ func getAllFiles(j *job.Job) {
   }
 
   totalBytes := waitForDownloads(j,c,e)
-  printSummary(start, totalBytes, j.DocCount())
+  printSummary(start, totalBytes, j.CompleteCount())
 }
 
 func waitForDownloads(j *job.Job, c chan stat, e chan error) (totalBytes int) {
