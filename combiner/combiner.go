@@ -40,10 +40,10 @@ func (j *Job) IsValid() bool {
  return (j.BucketName != "") &&
         (j.Callback   != "") &&
         (j.EmployerId > 0)   &&
-        (j.DocCount() > 0)
+        (j.docCount() > 0)
 }
 
-func (j *Job) DocCount() int {
+func (j *Job) docCount() int {
   return len(j.DocList)
 }
 
@@ -55,7 +55,7 @@ func (j *Job) hasDownloadedDocs() bool {
   return len(j.Downloaded) > 0
 }
 
-func (j *Job) AddError(newErr error) {
+func (j *Job) addError(newErr error) {
   log.Println(newErr)
   j.Errors = append(j.Errors, newErr)
 }
@@ -99,7 +99,7 @@ func (j *Job) getAllFiles() {
   }
 
   totalBytes := j.waitForDownloads(c,e)
-  printSummary(start, totalBytes, j.DocCount())
+  printSummary(start, totalBytes, j.docCount())
 }
 
 func (j *Job) waitForDownloads(c chan stat, e chan error) (totalBytes int) {
@@ -110,9 +110,9 @@ func (j *Job) waitForDownloads(c chan stat, e chan error) (totalBytes int) {
         totalBytes += packet.size
         j.markComplete(packet.filename)
       case err := <-e:
-        j.AddError(err)
+        j.addError(err)
       case <-time.After(2 * time.Minute):
-        j.AddError(errors.New("Timed out while downloading"))
+        j.addError(errors.New("Timed out while downloading"))
         return
     }
   }
