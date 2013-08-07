@@ -1,3 +1,5 @@
+// Package job provides the Job type and some methods on it.
+// TODO probably need a document type
 package job
 
 import(
@@ -8,6 +10,9 @@ import(
   "strings"
 )
 
+// A Job includes all the data necessary to execute a pdf combination.
+// It is mainly constructed from a JSON string in a HTTP request, but the
+// last two fields contain internal state.
 type Job struct {
   BucketName string
   EmployerId int
@@ -18,6 +23,7 @@ type Job struct {
   Bucket     *s3.Bucket
 }
 
+// Does the job contain all the fields necessary to start the combination?
 func (j *Job) IsValid() bool {
  return (j.BucketName != "") &&
         (j.Callback   != "") &&
@@ -25,23 +31,29 @@ func (j *Job) IsValid() bool {
         (j.DocCount() > 0)
 }
 
+// Retrieve the requested document from S3 as a byte slice.
 func (j *Job) Get(docname string) (data []byte, err error) {
+  //TODO j.connect() if necessary
   data, err = j.Bucket.Get(j.s3Path(docname))
   return
 }
 
+// The number of documents requested.
 func (j *Job) DocCount() int {
   return len(j.DocList)
 }
 
+// The number of documents actually completed.
 func (j *Job) CompleteCount() int {
   return len(j.Downloaded)
 }
 
+// Add a document to the list of completed (downloaded) docs.
 func (j *Job) MarkComplete(newdoc string) {
   j.Downloaded = append(j.Downloaded, newdoc)
 }
 
+// Have any documents been successfully downloaded?
 func (j *Job) HasDownloadedDocs() bool {
   return len(j.Downloaded) > 0
 }
@@ -55,6 +67,7 @@ func (j *Job) AddError(newErr error) {
   j.Errors = append(j.Errors, newErr)
 }
 
+// Connect to AWS and add the handle to the Job object.
 func (j *Job) Connect() {
   auth, err := aws.EnvAuth()
   if err != nil { panic(err) }
@@ -62,6 +75,7 @@ func (j *Job) Connect() {
   j.Bucket = s.Bucket(j.BucketName)
 }
 
+// Construct an absolute path within a bucket to a given document.
 func (j *Job) s3Path(docname string) string {
   return fmt.Sprintf("%d/docs/%s", j.EmployerId, docname)
 }

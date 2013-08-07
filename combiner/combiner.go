@@ -1,3 +1,5 @@
+// Package combiner contains methods to consume Job objects, orchestrating
+// the download, combination, and upload of a group of related PDF files.
 package combiner
 
 import (
@@ -11,6 +13,7 @@ import (
 )
 
 var (
+  downloadTimeout = 3 * time.Minute
   verbose = true
   bucketName = "pa-hrsuite-production"
   basedir = "/tmp/"
@@ -19,12 +22,16 @@ var (
                      "100035.pdf","100037.pdf","100038.pdf","100093.pdf"}
 )
 
+// A stat represents statistics about a completed document transfer operation.
 type stat struct {
   filename string
   size     int
   dlSecs   time.Duration
 }
 
+// Get an individual file from S3.  If successful, writes the file out to disk
+// and sends a stat object back to the main channel.  If there are errors they
+// are sent back through the error channel.
 func getFile(j *job.Job, docname string, c chan stat, e chan error) {
   start := time.Now()
   data, err := j.Get(docname)
@@ -43,6 +50,8 @@ func getFile(j *job.Job, docname string, c chan stat, e chan error) {
              dlSecs: time.Since(start) }
 }
 
+// Fan out a worker to download each document in parallel, then block
+// until all downloads are complete.
 func getAllFiles(j *job.Job) {
   start := time.Now()
   j.Connect()
@@ -56,6 +65,10 @@ func getAllFiles(j *job.Job) {
   printSummary(start, totalBytes, j.CompleteCount())
 }
 
+// Listen on several channels for information from background download
+// tasks -- each task will either send a stat through c, an error through
+// e, or timeout.  Once all docs are accounted for, return the total number
+// of bytes recieved.
 func waitForDownloads(j *job.Job, c chan stat, e chan error) (totalBytes int) {
   for _,_ = range j.DocList{
     select {
@@ -65,7 +78,7 @@ func waitForDownloads(j *job.Job, c chan stat, e chan error) (totalBytes int) {
         j.MarkComplete(packet.filename)
       case err := <-e:
         j.AddError(err)
-      case <-time.After(2 * time.Minute):
+      case <-time.After(downloadTimeout):
         j.AddError(errors.New("Timed out while downloading"))
         return
     }
@@ -73,6 +86,7 @@ func waitForDownloads(j *job.Job, c chan stat, e chan error) (totalBytes int) {
   return
 }
 
+// Print a summary of the download activity.
 func printSummary(start time.Time, bytes int, count int){
   elapsed := time.Since(start)
   seconds := elapsed.Seconds()
@@ -81,11 +95,16 @@ func printSummary(start time.Time, bytes int, count int){
              bytes, count, seconds, mbps)
 }
 
+// Send an update on the success or failure of the operation to the
+// callback URL provided by the job originator.
 func postToCallback(j *job.Job){
   log.Println("work complete, posting success to callback:",j.Callback)
   log.Println(j)
 }
 
+// The entry point to this package.  Given a Job, download all the files,
+// combine them into a single one, upload it to AWS and post the status to
+// a callback endpoint.
 func Combine(j *job.Job) bool {
   defer postToCallback(j)
   getAllFiles(j)
