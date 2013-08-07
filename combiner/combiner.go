@@ -5,6 +5,7 @@ import (
   "log"
   "fmt"
   "io/ioutil"
+  "errors"
   "launchpad.net/goamz/aws"
   "launchpad.net/goamz/s3"
   "pdfcombiner/cpdf"
@@ -24,7 +25,7 @@ type Job struct {
   EmployerId int
   DocList    []string
   Callback   string
-  Errors     []string
+  Errors     []error
   Bucket     *s3.Bucket
 }
 
@@ -46,25 +47,19 @@ func (j *Job) DocCount() int {
   return len(j.DocList)
 }
 
-func (j *Job) AddError(newErr string) {
+func (j *Job) AddError(newErr error) {
   log.Println(newErr)
   j.Errors = append(j.Errors, newErr)
 }
 
-func (j *Job) handleGenericError() {
-  if err := recover(); err != nil {
-    msg := fmt.Sprintf("failed: %s", err)
-    j.Errors = append(j.Errors, msg)
-    log.Println(msg)
-  }
+func (j *Job) handleGenericError(err error) {
+  msg := fmt.Sprintf("failed: %s", err)
+  j.AddError(errors.New(msg))
 }
 
-func (j *Job) handleGetError(doc string) {
-  if err := recover(); err != nil {
-    msg := fmt.Sprintf("failed while getting doc %s: '%s'",doc, err)
-    j.Errors = append(j.Errors, msg)
-    log.Println(msg)
-  }
+func (j *Job) handleGetError(err error, doc string) {
+  msg := fmt.Sprintf("failed while getting doc %s: '%s'",doc, err)
+  j.AddError(errors.New(msg))
 }
 
 func (j *Job) connect() {
@@ -75,14 +70,17 @@ func (j *Job) connect() {
 }
 
 func (j *Job) getFile(docname string, c chan stat) {
-  defer j.handleGetError(docname)
   start := time.Now()
   data, err := j.Bucket.Get(j.s3Path(docname))
-  if err != nil { panic(err) }
-
+  if err != nil {
+    j.handleGetError(err,docname)
+    return
+  }
   path := "/tmp/"+docname
   err = ioutil.WriteFile(path, data, 0644)
-  if err != nil { panic(err) }
+  if err != nil {
+    j.handleGenericError(err)
+  }
   c <- stat{ filename: docname,
              size: len(data),
              dlSecs: time.Since(start) }
@@ -93,7 +91,6 @@ func (j *Job) s3Path(docname string) string {
 }
 
 func (j *Job) getAllFiles() {
-  defer j.handleGenericError()
   start := time.Now()
   j.connect()
   c := make(chan stat)
@@ -112,7 +109,7 @@ func (j *Job) waitForDownloads(c chan stat) (totalBytes int) {
         if verbose { log.Printf("%s was %d bytes\n", packet.filename,packet.size) }
         totalBytes += packet.size
       case <-time.After(2 * time.Minute):
-        j.AddError("Timed out while downloading")
+        j.AddError(errors.New("Timed out while downloading"))
         return
     }
   }
