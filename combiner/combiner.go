@@ -33,7 +33,6 @@ type stat struct {
   filename string
   size     int
   dlSecs   time.Duration
-  err      error
 }
 
 func (j *Job) IsValid() bool {
@@ -52,16 +51,6 @@ func (j *Job) AddError(newErr error) {
   j.Errors = append(j.Errors, newErr)
 }
 
-func (j *Job) handleGenericError(err error) {
-  msg := fmt.Sprintf("failed: %s", err)
-  j.AddError(errors.New(msg))
-}
-
-func (j *Job) handleGetError(err error, doc string) {
-  msg := fmt.Sprintf("failed while getting doc %s: '%s'",doc, err)
-  j.AddError(errors.New(msg))
-}
-
 func (j *Job) connect() {
   auth, err := aws.EnvAuth()
   if err != nil { panic(err) }
@@ -69,17 +58,18 @@ func (j *Job) connect() {
   j.Bucket = s.Bucket(bucketName)
 }
 
-func (j *Job) getFile(docname string, c chan stat) {
+func (j *Job) getFile(docname string, c chan stat, e chan error) {
   start := time.Now()
   data, err := j.Bucket.Get(j.s3Path(docname))
   if err != nil {
-    j.handleGetError(err,docname)
+    e <- fmt.Errorf("%v: %v", docname, err)
     return
   }
   path := "/tmp/"+docname
   err = ioutil.WriteFile(path, data, 0644)
   if err != nil {
-    j.handleGenericError(err)
+    e <- err; return
+    return
   }
   c <- stat{ filename: docname,
              size: len(data),
@@ -94,20 +84,23 @@ func (j *Job) getAllFiles() {
   start := time.Now()
   j.connect()
   c := make(chan stat)
+  e := make(chan error)
   for _,doc := range j.DocList{
-    go j.getFile(doc,c)
+    go j.getFile(doc,c,e)
   }
 
-  totalBytes := j.waitForDownloads(c)
+  totalBytes := j.waitForDownloads(c,e)
   printSummary(start, totalBytes, j.DocCount())
 }
 
-func (j *Job) waitForDownloads(c chan stat) (totalBytes int) {
+func (j *Job) waitForDownloads(c chan stat, e chan error) (totalBytes int) {
   for _,_ = range j.DocList{
     select {
       case packet := <-c:
         if verbose { log.Printf("%s was %d bytes\n", packet.filename,packet.size) }
         totalBytes += packet.size
+      case err := <-e:
+        j.AddError(err)
       case <-time.After(2 * time.Minute):
         j.AddError(errors.New("Timed out while downloading"))
         return
