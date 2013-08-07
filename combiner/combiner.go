@@ -125,7 +125,9 @@ func (j *Job) postToCallback(){
 func (j *Job) Combine() bool {
   defer j.postToCallback()
   j.getAllFiles()
-  cpdf.Merge(j.DocList)
+  if len(j.Errors) > 0 {
+    cpdf.Merge(j.DocList)
+  }
   return true
 }
 
