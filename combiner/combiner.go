@@ -36,6 +36,15 @@ type stat struct {
   dlSecs   time.Duration
 }
 
+func (j *Job) Combine() bool {
+  defer j.postToCallback()
+  j.getAllFiles()
+  if j.hasDownloadedDocs() {
+    cpdf.Merge(j.Downloaded)
+  }
+  return true
+}
+
 func (j *Job) IsValid() bool {
  return (j.BucketName != "") &&
         (j.Callback   != "") &&
@@ -130,14 +139,5 @@ func printSummary(start time.Time, bytes int, count int){
 func (j *Job) postToCallback(){
   log.Println("work complete, posting success to callback:",j.Callback)
   log.Println(j)
-}
-
-func (j *Job) Combine() bool {
-  defer j.postToCallback()
-  j.getAllFiles()
-  if j.hasDownloadedDocs() {
-    cpdf.Merge(j.Downloaded)
-  }
-  return true
 }
 
