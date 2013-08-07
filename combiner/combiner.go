@@ -24,6 +24,7 @@ type Job struct {
   BucketName string
   EmployerId int
   DocList    []string
+  Downloaded []string
   Callback   string
   Errors     []error
   Bucket     *s3.Bucket
@@ -44,6 +45,14 @@ func (j *Job) IsValid() bool {
 
 func (j *Job) DocCount() int {
   return len(j.DocList)
+}
+
+func (j *Job) markComplete(newdoc string) {
+  j.Downloaded = append(j.Downloaded, newdoc)
+}
+
+func (j *Job) hasDownloadedDocs() bool {
+  return len(j.Downloaded) > 0
 }
 
 func (j *Job) AddError(newErr error) {
@@ -99,6 +108,7 @@ func (j *Job) waitForDownloads(c chan stat, e chan error) (totalBytes int) {
       case packet := <-c:
         if verbose { log.Printf("%s was %d bytes\n", packet.filename,packet.size) }
         totalBytes += packet.size
+        j.markComplete(packet.filename)
       case err := <-e:
         j.AddError(err)
       case <-time.After(2 * time.Minute):
@@ -125,8 +135,8 @@ func (j *Job) postToCallback(){
 func (j *Job) Combine() bool {
   defer j.postToCallback()
   j.getAllFiles()
-  if len(j.Errors) > 0 {
-    cpdf.Merge(j.DocList)
+  if j.hasDownloadedDocs() {
+    cpdf.Merge(j.Downloaded)
   }
   return true
 }
