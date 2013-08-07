@@ -46,6 +46,11 @@ func (j *Job) DocCount() int {
   return len(j.DocList)
 }
 
+func (j *Job) AddError(newErr string) {
+  log.Println(newErr)
+  j.Errors = append(j.Errors, newErr)
+}
+
 func (j *Job) handleGenericError() {
   if err := recover(); err != nil {
     msg := fmt.Sprintf("failed: %s", err)
@@ -102,9 +107,14 @@ func (j *Job) getAllFiles() {
 
 func (j *Job) waitForDownloads(c chan stat) (totalBytes int) {
   for _,_ = range j.DocList{
-    packet := <-c
-    if verbose { log.Printf("%s was %d bytes\n", packet.filename,packet.size) }
-    totalBytes += packet.size
+    select {
+      case packet := <-c:
+        if verbose { log.Printf("%s was %d bytes\n", packet.filename,packet.size) }
+        totalBytes += packet.size
+      case <-time.After(2 * time.Minute):
+        j.AddError("Timed out while downloading")
+        return
+    }
   }
   return
 }
