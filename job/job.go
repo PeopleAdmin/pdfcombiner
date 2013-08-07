@@ -5,6 +5,7 @@ import(
   "launchpad.net/goamz/s3"
   "log"
   "fmt"
+  "strings"
 )
 
 type Job struct {
@@ -41,8 +42,12 @@ func (j *Job) HasDownloadedDocs() bool {
   return len(j.Downloaded) > 0
 }
 
+// Add to the list of encountered errors, translating obscure ones.
 func (j *Job) AddError(newErr error) {
   log.Println(newErr)
+  if strings.Contains(newErr.Error(), "Get : 301 response missing Location header") {
+    newErr = fmt.Errorf("bucket %s not accessible from this account", j.BucketName)
+  }
   j.Errors = append(j.Errors, newErr)
 }
 
