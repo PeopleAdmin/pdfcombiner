@@ -15,11 +15,7 @@ import (
 var (
   downloadTimeout = 3 * time.Minute
   verbose = true
-  bucketName = "pa-hrsuite-production"
   basedir = "/tmp/"
-  keybase = "606/docs/"
-  defdocs = []string{"100001.pdf","100009.pdf","100030.pdf","100035.pdf",
-                     "100035.pdf","100037.pdf","100038.pdf","100093.pdf"}
 )
 
 // A stat represents statistics about a completed document transfer operation.
@@ -39,7 +35,7 @@ func getFile(j *job.Job, docname string, c chan stat, e chan error) {
     e <- fmt.Errorf("%v: %v", docname, err)
     return
   }
-  path := "/tmp/"+docname
+  path := basedir+docname
   err = ioutil.WriteFile(path, data, 0644)
   if err != nil {
     e <- err; return
