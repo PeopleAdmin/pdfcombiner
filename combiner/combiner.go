@@ -40,7 +40,7 @@ func getFile(j *job.Job, docname string, c chan<- stat, e chan<- error) {
   path := basedir+docname
   err = ioutil.WriteFile(path, data, 0644)
   if err != nil {
-    e <- err; return
+    e <- err
     return
   }
   c <- stat{ filename: docname,
