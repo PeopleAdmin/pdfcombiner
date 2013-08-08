@@ -46,7 +46,7 @@ func getFile(j *job.Job, docname string, c chan stat, e chan error) {
              dlSecs: time.Since(start) }
 }
 
-// Fan out a worker to download each document in parallel, then block
+// Fan out workers to download each document in parallel, then block
 // until all downloads are complete.
 func getAllFiles(j *job.Job) {
   start := time.Now()
