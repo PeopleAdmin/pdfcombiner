@@ -30,7 +30,7 @@ type stat struct {
 // Get an individual file from S3.  If successful, writes the file out to disk
 // and sends a stat object back to the main channel.  If there are errors they
 // are sent back through the error channel.
-func getFile(j *job.Job, docname string, c chan stat, e chan error) {
+func getFile(j *job.Job, docname string, c chan<- stat, e chan<- error) {
   start := time.Now()
   data, err := j.Get(docname)
   if err != nil {
@@ -77,7 +77,7 @@ func throttle() {
 // tasks -- each task will either send a stat through c, an error through
 // e, or timeout.  Once all docs are accounted for, return the total number
 // of bytes recieved.
-func waitForDownloads(j *job.Job, c chan stat, e chan error) (totalBytes int) {
+func waitForDownloads(j *job.Job, c <-chan stat, e <-chan error) (totalBytes int) {
   for _,_ = range j.DocList{
     select {
       case packet := <-c:
