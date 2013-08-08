@@ -10,12 +10,14 @@ import (
   "errors"
   "pdfcombiner/cpdf"
   "pdfcombiner/job"
+  "runtime"
 )
 
 var (
   downloadTimeout = 3 * time.Minute
   verbose = true
   basedir = "/tmp/"
+  MaxGoroutines = 30
 )
 
 // A stat represents statistics about a completed document transfer operation.
@@ -54,11 +56,21 @@ func getAllFiles(j *job.Job) {
   c := make(chan stat, j.DocCount())
   e := make(chan error, j.DocCount())
   for _,doc := range j.DocList{
+    throttle()
     go getFile(j,doc,c,e)
   }
 
   totalBytes := waitForDownloads(j,c,e)
   printSummary(start, totalBytes, j.CompleteCount())
+}
+
+// Prevents the system from being overwhelmed with work.
+// Blocks until the number of Goroutines is less than a preset threshold.
+func throttle() {
+  for {
+    if runtime.NumGoroutine() < MaxGoroutines { break }
+    time.Sleep( 50 * time.Millisecond )
+  }
 }
 
 // Listen on several channels for information from background download
