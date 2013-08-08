@@ -51,8 +51,8 @@ func getFile(j *job.Job, docname string, c chan stat, e chan error) {
 func getAllFiles(j *job.Job) {
   start := time.Now()
   j.Connect()
-  c := make(chan stat)
-  e := make(chan error)
+  c := make(chan stat, j.DocCount())
+  e := make(chan error, j.DocCount())
   for _,doc := range j.DocList{
     go getFile(j,doc,c,e)
   }
