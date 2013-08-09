@@ -24,6 +24,11 @@ type Job struct {
   bucket     *s3.Bucket
 }
 
+type JobResponse struct {
+  Success bool `json:"success"`
+  Job     Job  `json:"job"`
+}
+
 // Does the job contain all the fields necessary to start the combination?
 func (j *Job) IsValid() bool {
  return (j.BucketName != "") &&
@@ -55,6 +60,7 @@ func (j *Job) MarkComplete(newdoc string) {
 }
 
 // Have any documents been successfully downloaded?
+// TODO is it appropriate to use this to determine success in ToJSON()?
 func (j *Job) HasDownloadedDocs() bool {
   return len(j.Downloaded) > 0
 }
@@ -63,9 +69,12 @@ func (j *Job) RecipientUrl() string{
   return j.Callback
 }
 
-func (j *Job) ToJson() (response []byte) {
-  response, _ = json.Marshal(j)
-  fmt.Printf("%s\n",response)
+func (j *Job) ToJson() (json_response []byte) {
+  response := JobResponse{
+    Job: *j,
+    Success: j.HasDownloadedDocs() }
+  json_response, _ = json.Marshal(response)
+  fmt.Printf("%s\n",json_response)
   return
 }
 
