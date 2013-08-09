@@ -10,6 +10,7 @@ import (
   "errors"
   "pdfcombiner/cpdf"
   "pdfcombiner/job"
+  "pdfcombiner/poster"
   "runtime"
 )
 
@@ -106,8 +107,9 @@ func printSummary(start time.Time, bytes int, count int){
 // Send an update on the success or failure of the operation to the
 // callback URL provided by the job originator.
 func postToCallback(j *job.Job){
-  log.Println("work complete, posting success to callback:",j.Callback)
-  log.Println(j)
+  log.Println("work complete, posting status to callback:",j.Callback)
+  _ = j.ToJson()
+  poster.SendNotification(j)
 }
 
 // The entry point to this package.  Given a Job, download all the files,

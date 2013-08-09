@@ -8,6 +8,7 @@ import(
   "log"
   "fmt"
   "strings"
+  "encoding/json"
 )
 
 // A Job includes all the data necessary to execute a pdf combination.
@@ -56,6 +57,16 @@ func (j *Job) MarkComplete(newdoc string) {
 // Have any documents been successfully downloaded?
 func (j *Job) HasDownloadedDocs() bool {
   return len(j.Downloaded) > 0
+}
+
+func (j *Job) RecipientUrl() string{
+  return j.Callback
+}
+
+func (j *Job) ToJson() (response []byte) {
+  response, _ = json.Marshal(j)
+  fmt.Printf("%s\n",response)
+  return
 }
 
 // Add to the list of encountered errors, translating obscure ones.
