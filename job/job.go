@@ -21,7 +21,7 @@ type Job struct {
   Downloaded []string
   Callback   string
   Errors     []error
-  Bucket     *s3.Bucket
+  bucket     *s3.Bucket
 }
 
 // Does the job contain all the fields necessary to start the combination?
@@ -35,7 +35,7 @@ func (j *Job) IsValid() bool {
 // Retrieve the requested document from S3 as a byte slice.
 func (j *Job) Get(docname string) (data []byte, err error) {
   //TODO j.connect() if necessary
-  data, err = j.Bucket.Get(j.s3Path(docname))
+  data, err = j.bucket.Get(j.s3Path(docname))
   return
 }
 
@@ -83,7 +83,7 @@ func (j *Job) Connect() {
   auth, err := aws.EnvAuth()
   if err != nil { panic(err) }
   s := s3.New(auth, aws.USEast)
-  j.Bucket = s.Bucket(j.BucketName)
+  j.bucket = s.Bucket(j.BucketName)
 }
 
 // Construct an absolute path within a bucket to a given document.
