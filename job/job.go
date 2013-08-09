@@ -15,12 +15,12 @@ import(
 // It is mainly constructed from a JSON string in a HTTP request, but the
 // last two fields contain internal state.
 type Job struct {
-  BucketName string
-  EmployerId int
-  DocList    []string
-  Downloaded []string
-  Callback   string
-  Errors     []error
+  BucketName string     `json:"bucket_name"`
+  EmployerId int        `json:"employer_id"`
+  DocList    []string   `json:"doc_list"`
+  Downloaded []string   `json:"downloaded"`
+  Callback   string     `json:"callback"`
+  Errors     []error    `json:"errors"`
   bucket     *s3.Bucket
 }
 
