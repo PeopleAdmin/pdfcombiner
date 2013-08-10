@@ -1,10 +1,10 @@
 // Package combiner contains methods to consume Job objects, orchestrating
 // the download, combination, and upload of a group of related PDF files.
+// TODO now that stat{} can return errors, maybe the err chan is unnecessary
 package combiner
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"pdfcombiner/cpdf"
@@ -26,22 +26,23 @@ type stat struct {
 	filename string
 	size     int
 	dlSecs   time.Duration
+	err      error
 }
 
 // Get an individual file from S3.  If successful, writes the file out to disk
 // and sends a stat object back to the main channel.  If there are errors they
 // are sent back through the error channel.
-func getFile(j *job.Job, docname string, c chan<- stat, e chan<- error) {
+func getFile(j *job.Job, docname string, c chan<- stat, e chan<- stat) {
 	start := time.Now()
 	data, err := j.Get(docname)
 	if err != nil {
-		e <- fmt.Errorf("%v: %v", docname, err)
+		e <- stat{filename: docname, err: err}
 		return
 	}
 	path := basedir + docname
 	err = ioutil.WriteFile(path, data, 0644)
 	if err != nil {
-		e <- err
+		e <- stat{filename: docname, err: err}
 		return
 	}
 	c <- stat{filename: docname,
@@ -53,9 +54,8 @@ func getFile(j *job.Job, docname string, c chan<- stat, e chan<- error) {
 // until all downloads are complete.
 func getAllFiles(j *job.Job) {
 	start := time.Now()
-	j.Connect()
 	c := make(chan stat, j.DocCount())
-	e := make(chan error, j.DocCount())
+	e := make(chan stat, j.DocCount())
 	for _, doc := range j.DocList {
 		throttle()
 		go getFile(j, doc, c, e)
@@ -80,7 +80,7 @@ func throttle() {
 // tasks -- each task will either send a stat through c, an error through
 // e, or timeout.  Once all docs are accounted for, return the total number
 // of bytes recieved.
-func waitForDownloads(j *job.Job, c <-chan stat, e <-chan error) (totalBytes int) {
+func waitForDownloads(j *job.Job, c <-chan stat, e <-chan stat) (totalBytes int) {
 	for _, _ = range j.DocList {
 		select {
 		case packet := <-c:
@@ -89,10 +89,10 @@ func waitForDownloads(j *job.Job, c <-chan stat, e <-chan error) (totalBytes int
 			}
 			totalBytes += packet.size
 			j.MarkComplete(packet.filename)
-		case err := <-e:
-			j.AddError(err)
+		case bad := <-e:
+			j.AddError(bad.filename, bad.err)
 		case <-time.After(downloadTimeout):
-			j.AddError(errors.New("Timed out while downloading"))
+			j.AddError("general", errors.New("Timed out while downloading"))
 			return
 		}
 	}

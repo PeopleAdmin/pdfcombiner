@@ -1,10 +1,12 @@
 // Package job provides the Job type and some methods on it.
+// TODO caching s3 connection objects in a pool might speed things up.
 // TODO probably need a document type
 package job
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
@@ -15,18 +17,31 @@ import (
 // It is mainly constructed from a JSON string in a HTTP request, but the
 // last two fields contain internal state.
 type Job struct {
-	BucketName string   `json:"bucket_name"`
-	EmployerId int      `json:"employer_id"`
-	DocList    []string `json:"doc_list"`
-	Downloaded []string `json:"downloaded"`
-	Callback   string   `json:"callback"`
-	Errors     []error  `json:"errors"`
+	BucketName string            `json:"bucket_name"`
+	EmployerId int               `json:"employer_id"`
+	DocList    []string          `json:"doc_list"`
+	Downloaded []string          `json:"downloaded"`
+	Callback   string            `json:"callback"`
+	Errors     map[string]string `json:"errors"`
 	bucket     *s3.Bucket
 }
 
 type JobResponse struct {
 	Success bool `json:"success"`
 	Job     Job  `json:"job"`
+}
+
+// Initialize a Job from an io.Reader containing JSON conforming to the
+// Job schema (excluding Errors, Downloaded, and bucket).
+func NewFromJson(encoded io.Reader) (newJob *Job, err error) {
+	newJob = &Job{}
+	err = json.NewDecoder(encoded).Decode(newJob)
+	if err != nil {
+		return
+	}
+	err = newJob.connect()
+	newJob.Errors = make(map[string]string)
+	return
 }
 
 // Does the job contain all the fields necessary to start the combination?
@@ -39,7 +54,6 @@ func (j *Job) IsValid() bool {
 
 // Retrieve the requested document from S3 as a byte slice.
 func (j *Job) Get(docname string) (data []byte, err error) {
-	//TODO j.connect() if necessary
 	data, err = j.bucket.Get(j.s3Path(docname))
 	return
 }
@@ -79,22 +93,23 @@ func (j *Job) ToJson() (json_response []byte) {
 }
 
 // Add to the list of encountered errors, translating obscure ones.
-func (j *Job) AddError(newErr error) {
+func (j *Job) AddError(sourceFile string, newErr error) {
 	log.Println(newErr)
 	if strings.Contains(newErr.Error(), "Get : 301 response missing Location header") {
 		newErr = fmt.Errorf("bucket %s not accessible from this account", j.BucketName)
 	}
-	j.Errors = append(j.Errors, newErr)
+	j.Errors[sourceFile] = newErr.Error()
 }
 
 // Connect to AWS and add the handle to the Job object.
-func (j *Job) Connect() {
+func (j *Job) connect() (err error) {
 	auth, err := aws.EnvAuth()
 	if err != nil {
-		panic(err)
+		return
 	}
 	s := s3.New(auth, aws.USEast)
 	j.bucket = s.Bucket(j.BucketName)
+	return
 }
 
 // Construct an absolute path within a bucket to a given document.
