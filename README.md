@@ -36,7 +36,7 @@ callback URL will recieve a POST with a JSON body similar to:
   "success": true,
   "combined_file": "path/to/combined/file.pdf",
   "job": {
-    "bucket_name": "somebucket"
+    "bucket_name": "somebucket",
     "employer_id": 123,
     "doc_list": [
       "realfile.pdf",
@@ -45,9 +45,16 @@ callback URL will recieve a POST with a JSON body similar to:
     "downloaded": [
       "realfile.pdf"
     ],
-    "callback": "http://mycallbackurl.com/combination_result/12345"
+    "callback": "http://mycallbackurl.com/combination_result/12345",
     "errors": {
       "nonexistent_file": "The specified key does not exist."
+    },
+    "perf_stats": {
+      "realfile.pdf": {
+        "Filename": "realfile.pdf",
+        "Size": 1292244,
+        "DlTime": 1229882563
+      }
     }
   }
 }

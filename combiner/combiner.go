@@ -1,6 +1,6 @@
 // Package combiner contains methods to consume Job objects, orchestrating
 // the download, combination, and upload of a group of related PDF files.
-// TODO now that stat{} can return errors, maybe the err chan is unnecessary
+// TODO now that s.Stat{} can return errors, maybe the err chan is unnecessary
 package combiner
 
 import (
@@ -10,6 +10,7 @@ import (
 	"pdfcombiner/cpdf"
 	"pdfcombiner/job"
 	"pdfcombiner/notifier"
+	s "pdfcombiner/stat"
 	"runtime"
 	"time"
 )
@@ -21,41 +22,33 @@ var (
 	MaxGoroutines   = 30
 )
 
-// A stat represents statistics about a completed document transfer operation.
-type stat struct {
-	filename string
-	size     int
-	dlSecs   time.Duration
-	err      error
-}
-
 // Get an individual file from S3.  If successful, writes the file out to disk
 // and sends a stat object back to the main channel.  If there are errors they
 // are sent back through the error channel.
-func getFile(j *job.Job, docname string, c chan<- stat, e chan<- stat) {
+func getFile(j *job.Job, docname string, c chan<- s.Stat, e chan<- s.Stat) {
 	start := time.Now()
 	data, err := j.Get(docname)
 	if err != nil {
-		e <- stat{filename: docname, err: err}
+		e <- s.Stat{Filename: docname, Err: err}
 		return
 	}
 	path := basedir + docname
 	err = ioutil.WriteFile(path, data, 0644)
 	if err != nil {
-		e <- stat{filename: docname, err: err}
+		e <- s.Stat{Filename: docname, Err: err}
 		return
 	}
-	c <- stat{filename: docname,
-		size:   len(data),
-		dlSecs: time.Since(start)}
+	c <- s.Stat{Filename: docname,
+		Size:   len(data),
+		DlTime: time.Since(start)}
 }
 
 // Fan out workers to download each document in parallel, then block
 // until all downloads are complete.
 func getAllFiles(j *job.Job) {
 	start := time.Now()
-	c := make(chan stat, j.DocCount())
-	e := make(chan stat, j.DocCount())
+	c := make(chan s.Stat, j.DocCount())
+	e := make(chan s.Stat, j.DocCount())
 	for _, doc := range j.DocList {
 		throttle()
 		go getFile(j, doc, c, e)
@@ -77,20 +70,20 @@ func throttle() {
 }
 
 // Listen on several channels for information from background download
-// tasks -- each task will either send a stat through c, an error through
+// tasks -- each task will either send a s.Stat through c, an error through
 // e, or timeout.  Once all docs are accounted for, return the total number
 // of bytes recieved.
-func waitForDownloads(j *job.Job, c <-chan stat, e <-chan stat) (totalBytes int) {
+func waitForDownloads(j *job.Job, c <-chan s.Stat, e <-chan s.Stat) (totalBytes int) {
 	for _, _ = range j.DocList {
 		select {
 		case packet := <-c:
 			if verbose {
-				log.Printf("%s was %d bytes\n", packet.filename, packet.size)
+				log.Printf("%s was %d bytes\n", packet.Filename, packet.Size)
 			}
-			totalBytes += packet.size
-			j.MarkComplete(packet.filename)
+			totalBytes += packet.Size
+			j.MarkComplete(packet.Filename, packet)
 		case bad := <-e:
-			j.AddError(bad.filename, bad.err)
+			j.AddError(bad.Filename, bad.Err)
 		case <-time.After(downloadTimeout):
 			j.AddError("general", errors.New("Timed out while downloading"))
 			return

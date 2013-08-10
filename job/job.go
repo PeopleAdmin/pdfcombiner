@@ -11,18 +11,20 @@ import (
 	"launchpad.net/goamz/s3"
 	"log"
 	"strings"
+	"pdfcombiner/stat"
 )
 
 // A Job includes all the data necessary to execute a pdf combination.
 // It is mainly constructed from a JSON string in a HTTP request, but the
 // last two fields contain internal state.
 type Job struct {
-	BucketName string            `json:"bucket_name"`
-	EmployerId int               `json:"employer_id"`
-	DocList    []string          `json:"doc_list"`
-	Downloaded []string          `json:"downloaded"`
-	Callback   string            `json:"callback"`
-	Errors     map[string]string `json:"errors"`
+	BucketName string               `json:"bucket_name"`
+	EmployerId int                  `json:"employer_id"`
+	DocList    []string             `json:"doc_list"`
+	Downloaded []string             `json:"downloaded"`
+	Callback   string               `json:"callback"`
+	Errors     map[string]string    `json:"errors"`
+	PerfStats  map[string]stat.Stat `json:"perf_stats"`
 	bucket     *s3.Bucket
 }
 
@@ -41,6 +43,7 @@ func NewFromJson(encoded io.Reader) (newJob *Job, err error) {
 	}
 	err = newJob.connect()
 	newJob.Errors = make(map[string]string)
+	newJob.PerfStats = make(map[string]stat.Stat)
 	return
 }
 
@@ -69,8 +72,9 @@ func (j *Job) CompleteCount() int {
 }
 
 // Add a document to the list of completed (downloaded) docs.
-func (j *Job) MarkComplete(newdoc string) {
+func (j *Job) MarkComplete(newdoc string, info stat.Stat) {
 	j.Downloaded = append(j.Downloaded, newdoc)
+	j.PerfStats[newdoc] = info
 }
 
 // Have any documents been successfully downloaded?
