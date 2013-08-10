@@ -9,7 +9,7 @@ import (
 	"log"
 	"pdfcombiner/cpdf"
 	"pdfcombiner/job"
-	"pdfcombiner/poster"
+	"pdfcombiner/notifier"
 	"runtime"
 	"time"
 )
@@ -113,7 +113,7 @@ func printSummary(start time.Time, bytes int, count int) {
 func postToCallback(j *job.Job) {
 	log.Println("work complete, posting status to callback:", j.Callback)
 	_ = j.ToJson()
-	poster.SendNotification(j)
+	notifier.SendNotification(j)
 }
 
 // The entry point to this package.  Given a Job, download all the files,

@@ -1,6 +1,6 @@
-// Package Poster contains types and methods for sending notifications
+// Package notifier contains types and methods for sending notifications
 // that a job has completed.
-package poster
+package notifier
 
 // To create notifications, an object has to have a destination in mind
 // and be able to serialize itself into a JSON message.
