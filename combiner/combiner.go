@@ -17,7 +17,6 @@ import (
 
 var (
 	downloadTimeout = 3 * time.Minute
-	verbose         = true
 	basedir         = "/tmp/"
 	MaxGoroutines   = 30
 )
@@ -77,9 +76,7 @@ func waitForDownloads(j *job.Job, c <-chan s.Stat, e <-chan s.Stat) (totalBytes 
 	for _, _ = range j.DocList {
 		select {
 		case packet := <-c:
-			if verbose {
-				log.Printf("%s was %d bytes\n", packet.Filename, packet.Size)
-			}
+			log.Printf("%s was %d bytes\n", packet.Filename, packet.Size)
 			totalBytes += packet.Size
 			j.MarkComplete(packet.Filename, packet)
 		case bad := <-e:
