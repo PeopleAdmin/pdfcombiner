@@ -1,16 +1,57 @@
 pdfcombiner
 ===========
 
-This is an HTTP endpoint that downloads a list of PDFs from Amazon S3, 
+This is an HTTP endpoint that downloads a list of PDFs from Amazon S3,
 combines them using `cpdf`, uploads the combined file, and POSTs the job
-status to a provided callback URL.  The format of the request should look
-like:
+status to a provided callback URL.  The format of the request to `/` should
+look like:
 
-    POST  http://localhost:8080?docs=1.pdf&docs=1.pdf?callback=http://myurl/update
-    
-Both parameters are required.
+```json
+{
+  "bucket_name": "somebucket",
+  "employer_id": 123,
+  "doc_list": [
+    "1.pdf",
+    "2.pdf"
+  ],
+  "callback": "http://mycallbackurl.com/combination_result/12345"
+}
+```
 
-The endpoint will immediately either return `200 OK` if it understood the 
-request, or `400 Bad Request` if not.  Work is done asynchronously in the
-background, and when complete, the provided callback URL will recieve a 
-json-encoded message indicating success or failure.
+The server will immediately respond either with:
+
+    HTTP/1.1 200 OK
+    {"response":"ok"}
+
+or
+
+    HTTP/1.1 400 Bad Request
+    {"response":"invalid params"}
+
+and begin processing the file.  When work is complete, the provided
+callback URL will recieve a POST with a JSON body similar to:
+
+```json
+{
+  "success": true,
+  "combined_file": "path/to/combined/file.pdf",
+  "job": {
+    "bucket_name": "somebucket"
+    "employer_id": 123,
+    "doc_list": [
+      "realfile.pdf",
+      "nonexistent_file"
+    ],
+    "downloaded": [
+      "realfile.pdf"
+    ],
+    "callback": "http://mycallbackurl.com/combination_result/12345"
+    "errors": {
+      "nonexistent_file": "The specified key does not exist."
+    }
+  }
+}
+```
+
+`"success"` is true if at least one file downloaded successfully.
+`"combined_file"` may be `null` if `success` is false.
