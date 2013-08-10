@@ -23,8 +23,7 @@ func init() {
 
 func main() {
 	server := new(server.CombinerServer)
-	http.HandleFunc("/favicon.ico", server.Ping)
-	http.HandleFunc("/health_check.html", server.Ping)
+	http.HandleFunc("/health_check", server.Ping)
 	http.HandleFunc("/", server.ProcessJob)
 	http.ListenAndServe(":8080", nil)
 }
