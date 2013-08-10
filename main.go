@@ -1,6 +1,8 @@
 // Accept requests to combine PDF documents located on Amazon S3 into
 // a single document, upload back to S3, and notify a callback URL.
 // TODO fail fast if S3 connection is not usable.
+// TODO include timing information in response
+// TODO need a way to enable auth in responses
 package main
 
 import (
