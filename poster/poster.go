@@ -4,12 +4,12 @@ package poster
 
 // To create notifications, an object has to have a destination in mind
 // and be able to serialize itself into a JSON message.
-type Notifiable interface{
-  RecipientUrl() string
-  ToJson()       []byte
+type Notifiable interface {
+	RecipientUrl() string
+	ToJson() []byte
 }
 
-func SendNotification(n Notifiable) (success bool, err error){
-  success = true
-  return
+func SendNotification(n Notifiable) (success bool, err error) {
+	success = true
+	return
 }

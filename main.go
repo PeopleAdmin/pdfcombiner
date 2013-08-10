@@ -2,22 +2,22 @@
 package main
 
 import (
-  "pdfcombiner/server"
-  "net/http"
-  "fmt"
-  "runtime"
+	"fmt"
+	"net/http"
+	"pdfcombiner/server"
+	"runtime"
 )
 
-func init(){
-  cpus := runtime.NumCPU()
-  fmt.Println("init with %s cpus", cpus)
-  runtime.GOMAXPROCS(cpus)
+func init() {
+	cpus := runtime.NumCPU()
+	fmt.Println("init with %s cpus", cpus)
+	runtime.GOMAXPROCS(cpus)
 }
 
 func main() {
-  server := new(server.CombinerServer)
-  http.HandleFunc("/favicon.ico", server.Ping)
-  http.HandleFunc("/health_check.html", server.Ping)
-  http.HandleFunc("/", server.ProcessJob)
-  http.ListenAndServe(":8080", nil)
+	server := new(server.CombinerServer)
+	http.HandleFunc("/favicon.ico", server.Ping)
+	http.HandleFunc("/health_check.html", server.Ping)
+	http.HandleFunc("/", server.ProcessJob)
+	http.ListenAndServe(":8080", nil)
 }
