@@ -1,5 +1,7 @@
-// Benchmark parallel downloading and combination of some pdf files.
+// Accept requests to combine PDF documents located on Amazon S3 into
+// a single document, upload back to S3, and notify a callback URL.
 package main
+
 
 import (
 	"net/http"
