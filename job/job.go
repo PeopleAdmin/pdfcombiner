@@ -10,8 +10,8 @@ import (
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
-	"strings"
 	"pdfcombiner/stat"
+	"strings"
 )
 
 // A Job includes all the data necessary to execute a pdf combination.
@@ -33,7 +33,7 @@ type JobResponse struct {
 	Job     Job  `json:"job"`
 }
 
-// Initialize a Job from an io.Reader containing JSON conforming to the
+// Construct a Job from an io.Reader containing JSON conforming to the
 // Job schema (excluding Errors, Downloaded, and bucket).
 func NewFromJson(encoded io.Reader) (newJob *Job, err error) {
 	newJob = &Job{}
@@ -41,9 +41,7 @@ func NewFromJson(encoded io.Reader) (newJob *Job, err error) {
 	if err != nil {
 		return
 	}
-	err = newJob.connect()
-	newJob.Errors = make(map[string]string)
-	newJob.PerfStats = make(map[string]stat.Stat)
+	newJob.setup()
 	return
 }
 
@@ -103,6 +101,14 @@ func (j *Job) AddError(sourceFile string, newErr error) {
 		newErr = fmt.Errorf("bucket %s not accessible from this account", j.BucketName)
 	}
 	j.Errors[sourceFile] = newErr.Error()
+}
+
+// Initialize the fields which don't have usable zero-values.
+func (j *Job) setup() (err error) {
+	err = j.connect()
+	j.Errors = make(map[string]string)
+	j.PerfStats = make(map[string]stat.Stat)
+	return
 }
 
 // Connect to AWS and add the handle to the Job object.
