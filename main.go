@@ -6,24 +6,46 @@
 package main
 
 import (
+	"flag"
 	"launchpad.net/goamz/aws"
 	"net/http"
 	"pdfcombiner/server"
 )
 
+var (
+	port       string
+	serverMode bool
+)
+
+func init() {
+	flag.BoolVar(&serverMode, "server", false, "run in server mode")
+	flag.StringVar(&port, "port", "8080", "port to listen on")
+}
+
+func main() {
+	flag.Parse()
+	verifyAws()
+	if serverMode {
+		serve()
+	}
+}
+
 // Verify AWS credentials are set in the environment:
 // - AWS_ACCESS_KEY_ID
 // - AWS_SECRET_ACCESS_KEY
-func init() {
+func verifyAws() {
 	_, err := aws.EnvAuth()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func main() {
+// Start a HTTP server listening on `port` to respond
+// to JSON-formatted combination requests.
+func serve() {
 	server := new(server.CombinerServer)
 	http.HandleFunc("/health_check", server.Ping)
 	http.HandleFunc("/", server.ProcessJob)
-	http.ListenAndServe(":8080", nil)
+	println("Accepting connections on " + port)
+	http.ListenAndServe(":"+port, nil)
 }
