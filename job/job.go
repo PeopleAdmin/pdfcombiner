@@ -1,6 +1,8 @@
 // Package job provides the Job type and some methods on it.
 // TODO caching s3 connection objects in a pool might speed things up.
 // TODO probably need a document type
+// TODO use callback interface for different types of success
+// notifications (e.g. command line and URL callbacks)
 package job
 
 import (
@@ -31,6 +33,12 @@ type Job struct {
 type JobResponse struct {
 	Success bool `json:"success"`
 	Job     Job  `json:"job"`
+}
+
+func New(bucket string, employer int, docs []string) (newJob *Job, err error) {
+	newJob = &Job{BucketName: bucket, EmployerId: employer, DocList: docs}
+	err = newJob.setup()
+	return
 }
 
 // Construct a Job from an io.Reader containing JSON conforming to the
