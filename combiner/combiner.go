@@ -91,8 +91,7 @@ func waitForDownloads(j *job.Job, c <-chan s.Stat, e <-chan s.Stat) (totalBytes 
 
 // Print a summary of the download activity.
 func printSummary(start time.Time, bytes int, count int) {
-	elapsed := time.Since(start)
-	seconds := elapsed.Seconds()
+	seconds := time.Since(start).Seconds()
 	mbps := float64(bytes) / 1024 / 1024 / seconds
 	log.Printf("got %d bytes over %d files in %f secs (%f MB/s)\n",
 		bytes, count, seconds, mbps)
