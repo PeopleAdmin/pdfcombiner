@@ -14,6 +14,16 @@ type CombinerServer struct{}
 var invalidMessage = "{\"response\":\"invalid params\"}"
 var okMessage = []byte("{\"response\":\"ok\"}\n")
 
+// Start a HTTP server listening on `port` to respond
+// to JSON-formatted combination requests.
+func ListenOn(port string) {
+	server := new(CombinerServer)
+	http.HandleFunc("/health_check", server.Ping)
+	http.HandleFunc("/", server.ProcessJob)
+	println("Accepting connections on " + port)
+	http.ListenAndServe(":"+port, nil)
+}
+
 // Handler to recieve a POSTed JSON body encoding a Job and if it validates,
 // send it along to be fulfilled.
 func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {

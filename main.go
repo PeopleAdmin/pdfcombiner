@@ -8,7 +8,6 @@ package main
 import (
 	"flag"
 	"launchpad.net/goamz/aws"
-	"net/http"
 	"pdfcombiner/server"
 )
 
@@ -26,7 +25,7 @@ func main() {
 	flag.Parse()
 	verifyAws()
 	if serverMode {
-		serve()
+		server.ListenOn(port)
 	}
 }
 
@@ -38,14 +37,4 @@ func verifyAws() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-// Start a HTTP server listening on `port` to respond
-// to JSON-formatted combination requests.
-func serve() {
-	server := new(server.CombinerServer)
-	http.HandleFunc("/health_check", server.Ping)
-	http.HandleFunc("/", server.ProcessJob)
-	println("Accepting connections on " + port)
-	http.ListenAndServe(":"+port, nil)
 }
