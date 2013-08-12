@@ -6,8 +6,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"launchpad.net/goamz/aws"
 	"os"
+	"pdfcombiner/job"
 	"pdfcombiner/server"
 )
 
@@ -43,12 +45,25 @@ func main() {
 
 // Combine the requested files and return the status to standard out.
 func combineSynchronously() {
-	if flag.NArg() < 1 {
-		println("Cannot start in standalone mode with no files to combine.")
-		flag.Usage()
-	}
+	checkArgs()
 	pdfFiles := flag.Args()
 	println(pdfFiles)
+	j, err := job.New(bucket, employerId, pdfFiles)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(j)
+}
+
+func checkArgs() {
+	switch {
+	case flag.NArg() < 1:
+		println("Cannot start in standalone mode with no files to combine.")
+		flag.Usage()
+	case (employerId == 0 || bucket == ""):
+		println("Missing argument")
+		flag.Usage()
+	}
 }
 
 // Verify AWS credentials are set in the environment:
