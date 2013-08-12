@@ -41,7 +41,7 @@ func main() {
 	}
 }
 
-// Combine the requested files and return the result to standard out.
+// Combine the requested files and return the status to standard out.
 func combineSynchronously() {
 	if flag.NArg() < 1 {
 		println("Cannot start in standalone mode with no files to combine.")
