@@ -6,8 +6,9 @@ import (
 
 // A Stat represents statistics about a completed document transfer operation.
 type Stat struct {
-	Filename string
-	Size     int
-	DlTime   time.Duration
-	Err      error         `json:",omitempty"`
+	Filename  string
+	Size      int
+	PageCount int
+	DlTime    time.Duration
+	Err       error `json:",omitempty"`
 }

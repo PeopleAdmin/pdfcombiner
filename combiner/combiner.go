@@ -5,6 +5,7 @@ package combiner
 
 import (
 	"errors"
+	"github.com/yob/pdfreader/pdfread"
 	"io/ioutil"
 	"log"
 	"pdfcombiner/cpdf"
@@ -37,9 +38,11 @@ func getFile(j *job.Job, docname string, c chan<- s.Stat, e chan<- s.Stat) {
 		e <- s.Stat{Filename: docname, Err: err}
 		return
 	}
+	pagecount := pdfread.Load(path).PageCount()
 	c <- s.Stat{Filename: docname,
-		Size:   len(data),
-		DlTime: time.Since(start)}
+		Size:      len(data),
+		PageCount: pagecount,
+		DlTime:    time.Since(start)}
 }
 
 // Fan out workers to download each document in parallel, then block
