@@ -1,50 +1,53 @@
-// Package cpdf contains methods to manipulate pdf files using cpdf.
-// TODO this does not currently handle demo versions of cpdf, as a
-// workaround, rename and wrap it with a script that strips demo text:
-//   #!/usr/bin/env bash
-//   _cpdf $@ |grep -v "This demo is for evaluation only"
+// Package cpdf contains methods to manipulate pdf files.
 package cpdf
 
 import (
+	"fmt"
+	"github.com/kless/shutil/sh"
 	"log"
 	"os/exec"
 	"strings"
-	"strconv"
-  "github.com/kless/shutil/sh"
+	"time"
 )
 
 // Combine the files located at the specified paths into a single pdf.
-func Merge(doclist []string) {
-	cpdf, err := exec.LookPath("cpdf")
-	if err != nil {
-		log.Fatal("no cpdf")
-	}
-	combine_cmd := exec.Command(cpdf)
-	combine_cmd.Dir = "/tmp"
-	combine_cmd.Args = cpdfMergeArgs(doclist)
-	out, err := combine_cmd.Output()
-	log.Println("stdout of command:", string(out))
-}
-
-func GetPageCount(filename string) (count int, err error) {
-	out, err := runCpdfCommand("pages",filename)
-	countStr := strings.Trim(string(out)," \n")
-	count, err = strconv.Atoi(countStr)
+func Merge(doclist []string) (outfile string, err error) {
+	outfile = getOutfile()
+	cmd := mergeCmd(doclist, outfile)
+	out, err := sh.Run(cmd)
+	log.Println(cmd)
+	log.Println(out)
+	log.Println(err)
 	return
 }
 
-func runCpdfCommand(command,filename string) (output string, err error) {
-	out, err := sh.Run(cpdf()+" -"+command+" " +filename)
-	output = string(out)
-	return
+// Constructs the command string to pdftk -- looks like
+// "/bin/pdftk file1.pdf file2.pdf output 12345.pdf"
+func mergeCmd(doclist []string, outfile string) string {
+	cmdComponents := []string{
+		CmdPath(),
+		strings.Join(appendTmp(doclist), " "),
+		("output /tmp/" + outfile)}
+	return strings.Join(cmdComponents, " ")
 }
 
-func cpdf() string {
-	cpdf, err := exec.LookPath("cpdf")
+func CmdPath() string {
+	pathToCmd, err := exec.LookPath("pdftk")
 	if err != nil {
-		log.Fatal("no cpdf")
+		log.Fatal("no pdftk found in path")
 	}
-	return cpdf
+	return pathToCmd
+}
+
+func getOutfile() string {
+	return fmt.Sprintf("%d.pdf", time.Now().Unix())
+}
+
+func appendTmp(list []string) []string {
+	for idx, file := range list {
+		list[idx] = "/tmp/" + file
+	}
+	return list
 }
 
 // Given a slice of documents, construct an args slice suitable for
