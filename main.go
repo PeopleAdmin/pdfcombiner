@@ -6,9 +6,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"launchpad.net/goamz/aws"
 	"os"
+	"pdfcombiner/combiner"
 	"pdfcombiner/job"
 	"pdfcombiner/server"
 )
@@ -47,12 +47,11 @@ func main() {
 func combineSynchronously() {
 	checkArgs()
 	pdfFiles := flag.Args()
-	println(pdfFiles)
 	j, err := job.New(bucket, employerId, pdfFiles)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(j)
+	combiner.Combine(j)
 }
 
 func checkArgs() {
