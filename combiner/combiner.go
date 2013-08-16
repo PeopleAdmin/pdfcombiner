@@ -5,9 +5,12 @@ package combiner
 
 import (
 	"errors"
+	"fmt"
 	"github.com/yob/pdfreader/pdfread"
 	"io/ioutil"
 	"log"
+	"math/rand"
+	"os"
 	"pdfcombiner/cpdf"
 	"pdfcombiner/job"
 	"pdfcombiner/notifier"
@@ -25,14 +28,14 @@ var (
 // Get an individual file from S3.  If successful, writes the file out to disk
 // and sends a stat object back to the main channel.  If there are errors they
 // are sent back through the error channel.
-func getFile(j *job.Job, docname string, c chan<- s.Stat, e chan<- s.Stat) {
+func getFile(j *job.Job, docname string, dir string, c chan<- s.Stat, e chan<- s.Stat) {
 	start := time.Now()
 	data, err := j.Get(docname)
 	if err != nil {
 		e <- s.Stat{Filename: docname, Err: err}
 		return
 	}
-	path := basedir + docname
+	path := dir + docname
 	err = ioutil.WriteFile(path, data, 0644)
 	if err != nil {
 		e <- s.Stat{Filename: docname, Err: err}
@@ -47,13 +50,13 @@ func getFile(j *job.Job, docname string, c chan<- s.Stat, e chan<- s.Stat) {
 
 // Fan out workers to download each document in parallel, then block
 // until all downloads are complete.
-func getAllFiles(j *job.Job) {
+func getAllFiles(j *job.Job, dir string) {
 	start := time.Now()
 	c := make(chan s.Stat, j.DocCount())
 	e := make(chan s.Stat, j.DocCount())
 	for _, doc := range j.DocList {
 		throttle()
-		go getFile(j, doc, c, e)
+		go getFile(j, doc, dir, c, e)
 	}
 
 	totalBytes := waitForDownloads(j, c, e)
@@ -108,14 +111,22 @@ func postToCallback(j *job.Job) {
 	notifier.SendNotification(j)
 }
 
+// Make and return a randomized temporary directory.
+func mkTmpDir() (dirname string) {
+	dirname = fmt.Sprintf("/tmp/pdfcombiner/%d/", rand.Int())
+	os.MkdirAll(dirname, 0777)
+	return
+}
+
 // The entry point to this package.  Given a Job, download all the files,
 // combine them into a single one, upload it to AWS and post the status to
 // a callback endpoint.
 func Combine(j *job.Job) bool {
 	defer postToCallback(j)
-	getAllFiles(j)
+	saveDir := mkTmpDir()
+	getAllFiles(j, saveDir)
 	if j.HasDownloadedDocs() {
-		cpdf.Merge(j.Downloaded)
+		cpdf.Merge(j.Downloaded, saveDir)
 	}
 	return true
 }

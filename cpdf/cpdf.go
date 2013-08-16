@@ -11,9 +11,9 @@ import (
 )
 
 // Combine the files located at the specified paths into a single pdf.
-func Merge(doclist []string) (outfile string, err error) {
+func Merge(doclist []string, dir string) (outfile string, err error) {
 	outfile = getOutfile()
-	cmd := mergeCmd(doclist, outfile)
+	cmd := mergeCmd(doclist, outfile, dir)
 	out, err := sh.Run(cmd)
 	log.Println(cmd)
 	log.Println(out)
@@ -23,11 +23,11 @@ func Merge(doclist []string) (outfile string, err error) {
 
 // Constructs the command string to pdftk -- looks like
 // "/bin/pdftk file1.pdf file2.pdf output 12345.pdf"
-func mergeCmd(doclist []string, outfile string) string {
+func mergeCmd(doclist []string, outfile string, dir string) string {
 	cmdComponents := []string{
 		CmdPath(),
-		strings.Join(appendTmp(doclist), " "),
-		("output /tmp/" + outfile)}
+		strings.Join(prefix(doclist, dir), " "),
+		("output " + dir + outfile)}
 	return strings.Join(cmdComponents, " ")
 }
 
@@ -43,11 +43,13 @@ func getOutfile() string {
 	return fmt.Sprintf("%d.pdf", time.Now().Unix())
 }
 
-func appendTmp(list []string) []string {
-	for idx, file := range list {
-		list[idx] = "/tmp/" + file
+// Prefix a list of files with a given directory path.
+func prefix(files []string, dir string) []string {
+	prefixed := make([]string, len(files))
+	for idx, file := range files {
+		prefixed[idx] = dir + file
 	}
-	return list
+	return prefixed
 }
 
 // Given a slice of documents, construct an args slice suitable for
