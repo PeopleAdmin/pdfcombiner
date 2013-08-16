@@ -113,6 +113,7 @@ func postToCallback(j *job.Job) {
 
 // Make and return a randomized temporary directory.
 func mkTmpDir() (dirname string) {
+	rand.Seed(time.Now().UnixNano())
 	dirname = fmt.Sprintf("/tmp/pdfcombiner/%d/", rand.Int())
 	os.MkdirAll(dirname, 0777)
 	return
