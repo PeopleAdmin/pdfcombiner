@@ -7,6 +7,7 @@ package job
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"launchpad.net/goamz/aws"
@@ -49,7 +50,11 @@ func NewFromJson(encoded io.Reader) (newJob *Job, err error) {
 	if err != nil {
 		return
 	}
-	newJob.setup()
+	if !newJob.IsValid() {
+		err = errors.New("Missing required fields")
+		return
+	}
+	err = newJob.setup()
 	return
 }
 
