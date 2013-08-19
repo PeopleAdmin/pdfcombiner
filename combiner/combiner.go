@@ -6,7 +6,7 @@ package combiner
 import (
 	"errors"
 	"fmt"
-	"github.com/yob/pdfreader/pdfread"
+	"github.com/brasic/pdfreader/pdfread"
 	"io/ioutil"
 	"log"
 	"math/rand"
