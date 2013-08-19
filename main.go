@@ -6,11 +6,12 @@ package main
 
 import (
 	"flag"
-	"launchpad.net/goamz/aws"
-	"os"
 	"github.com/brasic/pdfcombiner/combiner"
 	"github.com/brasic/pdfcombiner/job"
 	"github.com/brasic/pdfcombiner/server"
+	_ "github.com/stretchr/testify/assert"
+	"launchpad.net/goamz/aws"
+	"os"
 )
 
 var (
