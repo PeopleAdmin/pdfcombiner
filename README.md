@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/brasic/pdfcombiner.png)](https://travis-ci.org/brasic/pdfcombiner)
 pdfcombiner
 ===========
 
