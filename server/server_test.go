@@ -4,14 +4,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
 var (
-	handler     = new(CombinerServer)
-	validParams = "?docs=1.pdf&callback=http://google.com?_test=true"
-	invalidMsg  = "Need some docs and a callback url\n"
-	validMsg    = "Started combination on [1.pdf]\n"
+	handler        = new(CombinerServer)
+	invalidJson    = "{"
+	incompleteJson = "{}"
+	validJson      = "{\"bucket_name\":\"a\",\"employer_id\":1,\"doc_list\":[\"1.pdf\"], \"callback\":\"http://a.com\"}"
 )
 
 func TestPing(t *testing.T) {
@@ -22,20 +23,29 @@ func TestPing(t *testing.T) {
 	assert.Equal(t, "", recorder.Body.String())
 }
 
-//TODO broken by change to JSON POST
-func TestProcessCombineRequestRejectsInvalidRequest(t *testing.T) {
+func TestRejectsInvalidRequest(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/", nil) // nil ref here
+	postBody := strings.NewReader(invalidJson)
+	req, _ := http.NewRequest("POST", "http://example.com/", postBody)
 	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 400, recorder.Code)
-	assert.Equal(t, invalidMsg, recorder.Body.String())
+	assert.Equal(t, recorder.Body.String(), string(invalidMessage)+"\n")
 }
 
-//TODO broken by change to JSON POST
-func TestProcessCombineRequestAcceptsValidRequest(t *testing.T) {
+func TestRejectsIncompleteRequest(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/"+validParams, nil)
+	postBody := strings.NewReader(incompleteJson)
+	req, _ := http.NewRequest("POST", "http://example.com/", postBody)
+	handler.ProcessJob(recorder, req)
+	assert.Equal(t, 400, recorder.Code)
+	assert.Equal(t, recorder.Body.String(), string(invalidMessage)+"\n")
+}
+
+func TestAcceptsValidRequest(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	postBody := strings.NewReader(validJson)
+	req, _ := http.NewRequest("POST", "http://example.com/", postBody)
 	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 200, recorder.Code)
-	assert.Equal(t, validMsg, recorder.Body.String())
+	assert.Equal(t, recorder.Body.String(), string(okMessage))
 }
