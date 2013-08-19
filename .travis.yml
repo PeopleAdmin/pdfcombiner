@@ -1,5 +1,9 @@
 language: go
 go: 1.1
+env:
+  global:
+    - AWS_ACCESS_KEY_ID=FAKE
+    - AWS_SECRET_ACCESS_KEY=FAKE
 
 script:
   - go test -v ./...
