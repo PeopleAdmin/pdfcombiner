@@ -5,8 +5,8 @@ package server
 
 import (
 	"net/http"
-	"pdfcombiner/combiner"
-	"pdfcombiner/job"
+	"github.com/brasic/pdfcombiner/combiner"
+	"github.com/brasic/pdfcombiner/job"
 )
 
 type CombinerServer struct{}

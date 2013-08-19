@@ -13,7 +13,7 @@ import (
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
-	"pdfcombiner/stat"
+	"github.com/brasic/pdfcombiner/stat"
 	"strings"
 )
 
