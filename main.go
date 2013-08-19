@@ -8,9 +8,9 @@ import (
 	"flag"
 	"launchpad.net/goamz/aws"
 	"os"
-	"pdfcombiner/combiner"
-	"pdfcombiner/job"
-	"pdfcombiner/server"
+	"github.com/brasic/pdfcombiner/combiner"
+	"github.com/brasic/pdfcombiner/job"
+	"github.com/brasic/pdfcombiner/server"
 )
 
 var (
