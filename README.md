@@ -3,7 +3,7 @@ pdfcombiner
 ===========
 
 This is an HTTP endpoint that downloads a list of PDFs from Amazon S3,
-combines them using `cpdf`, uploads the combined file, and POSTs the job
+combines and uploads the combined file to S3, and POSTs the job
 status to a provided callback URL.  The format of the request to `/` should
 look like:
 
@@ -63,3 +63,7 @@ callback URL will recieve a POST with a JSON body similar to:
 
 `"success"` is true if at least one file downloaded successfully.
 `"combined_file"` may be `null` if `success` is false.
+
+
+You can also combine files in standalone mode from the command line.
+Use `./pdfcombiner -help` to get a list of options.
