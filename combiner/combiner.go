@@ -56,7 +56,7 @@ func getAllFiles(j *job.Job, dir string) {
 	e := make(chan s.Stat, j.DocCount())
 	for _, doc := range j.DocList {
 		throttle()
-		go getFile(j, doc, dir, c, e)
+		go getFile(j, doc.Name, dir, c, e)
 	}
 
 	totalBytes := waitForDownloads(j, c, e)

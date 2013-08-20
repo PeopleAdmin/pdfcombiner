@@ -1,6 +1,5 @@
 // Package job provides the Job type and some methods on it.
 // TODO caching s3 connection objects in a pool might speed things up.
-// TODO probably need a document type
 // TODO use callback interface for different types of success
 // notifications (e.g. command line and URL callbacks)
 package job
@@ -9,11 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/brasic/pdfcombiner/stat"
 	"io"
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
-	"github.com/brasic/pdfcombiner/stat"
 	"strings"
 )
 
@@ -23,7 +22,7 @@ import (
 type Job struct {
 	BucketName string               `json:"bucket_name"`
 	EmployerId int                  `json:"employer_id"`
-	DocList    []string             `json:"doc_list"`
+	DocList    []Document           `json:"doc_list"`
 	Downloaded []string             `json:"downloaded"`
 	Callback   string               `json:"callback"`
 	Errors     map[string]string    `json:"errors"`
@@ -31,13 +30,31 @@ type Job struct {
 	bucket     *s3.Bucket
 }
 
+type Document struct {
+	Name  string `json:"name"`
+	Title string `json:"title"`
+}
+
 type JobResponse struct {
 	Success bool `json:"success"`
 	Job     Job  `json:"job"`
 }
 
+// Given a slice of document names, return a slice of Documents.
+func docsFromStrings(names []string) (docs []Document) {
+	docs = make([]Document, len(names))
+	for i, name := range names {
+		docs[i] = Document{Name: name}
+	}
+	return
+}
+
 func New(bucket string, employer int, docs []string) (newJob *Job, err error) {
-	newJob = &Job{BucketName: bucket, EmployerId: employer, DocList: docs}
+	newJob = &Job{
+		BucketName: bucket,
+		EmployerId: employer,
+		DocList:    docsFromStrings(docs),
+	}
 	err = newJob.setup()
 	return
 }
