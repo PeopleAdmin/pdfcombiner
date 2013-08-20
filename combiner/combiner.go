@@ -107,7 +107,6 @@ func printSummary(start time.Time, bytes int, count int) {
 // callback URL provided by the job originator.
 func postToCallback(j *job.Job) {
 	log.Println("work complete, posting status to callback:", j.Callback)
-	_ = j.ToJson()
 	notifier.SendNotification(j)
 }
 

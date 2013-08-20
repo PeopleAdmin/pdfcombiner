@@ -5,6 +5,7 @@
 package job
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -111,7 +112,7 @@ func (j *Job) HasDownloadedDocs() bool {
 	return len(j.Downloaded) > 0
 }
 
-func (j *Job) RecipientUrl() string {
+func (j *Job) Recipient() string {
 	return j.Callback
 }
 
@@ -122,6 +123,10 @@ func (j *Job) ToJson() (json_response []byte) {
 	json_response, _ = json.Marshal(response)
 	fmt.Printf("%s\n", json_response)
 	return
+}
+
+func (j *Job) Content() io.Reader {
+	return bytes.NewReader(j.ToJson())
 }
 
 // Add to the list of encountered errors, translating obscure ones.
