@@ -1,13 +1,13 @@
 package job
 
 import (
-	"github.com/stretchr/testify/assert"
 	"github.com/brasic/pdfcombiner/stat"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 )
 
-var validJSON = "{\"bucket_name\":\"asd\",\"employer_id\":606,\"doc_list\":[\"100001.pdf\"], \"callback\":\"http://localhost:9090\"}"
+var validJSON = "{\"bucket_name\":\"asd\",\"employer_id\":606,\"doc_list\":[{\"name\":\"100001.pdf\"}], \"callback\":\"http://localhost:9090\"}"
 
 func TestValidation(t *testing.T) {
 	invalidJob := &Job{}
@@ -16,10 +16,10 @@ func TestValidation(t *testing.T) {
 		Callback:   "http://blah.com",
 		BucketName: "A",
 		EmployerId: 1,
-		DocList:    []string{},
+		DocList:    make([]Document, 0),
 	}
 	assert.False(t, newJob.IsValid(), "Job should not validate with an empty doclist")
-	newJob.DocList = append(newJob.DocList, "doc.pdf")
+	newJob.DocList = append(newJob.DocList, Document{Name: "doc.pdf"})
 	assert.True(t, newJob.IsValid(), "Job should validate when inputs are valid")
 }
 
@@ -50,6 +50,6 @@ func TestCompletion(t *testing.T) {
 
 func newFromString(in string) (newJob *Job, err error) {
 	json := strings.NewReader(in)
-	newJob,err = NewFromJson(json)
+	newJob, err = NewFromJson(json)
 	return
 }
