@@ -26,6 +26,7 @@ func SendNotification(n Notifiable) (response *http.Response, err error) {
 	response, err = client.Do(req)
 	if err != nil {
 		fmt.Println("Error posting notification:",err)
+		return
 	}
 	fmt.Println("Notification response:", response)
 	body, err := ioutil.ReadAll(response.Body)
