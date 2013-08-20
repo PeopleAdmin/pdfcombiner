@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var validJSON = "{\"bucket_name\":\"asd\",\"employer_id\":606,\"doc_list\":[{\"name\":\"100001.pdf\"}], \"callback\":\"http://localhost:9090\"}"
+var validJSON = `{"bucket_name":"asd","employer_id":606,"doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
 
 func TestValidation(t *testing.T) {
 	invalidJob := &Job{}

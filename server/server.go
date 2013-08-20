@@ -11,8 +11,8 @@ import (
 
 type CombinerServer struct{}
 
-var invalidMessage = "{\"response\":\"invalid params\"}"
-var okMessage = []byte("{\"response\":\"ok\"}\n")
+var invalidMessage = `{"response":"invalid params"}`
+var okMessage = []byte(`{"response":"ok"}\n`)
 
 // Start a HTTP server listening on `port` to respond
 // to JSON-formatted combination requests.
