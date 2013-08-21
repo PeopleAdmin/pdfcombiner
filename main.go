@@ -18,6 +18,7 @@ var (
 	serverMode bool
 	bucket     string
 	employerId int
+	daemon     server.CombinerServer
 )
 
 func init() {
@@ -37,7 +38,7 @@ func main() {
 	verifyAws()
 	switch {
 	case serverMode:
-		daemon := server.CombinerServer{Port: port}
+		daemon.Port = port
 		daemon.Listen()
 	default:
 		combineSynchronously()

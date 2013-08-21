@@ -28,6 +28,11 @@ func (c CombinerServer) Listen() {
 	http.ListenAndServe(c.portString(), nil)
 }
 
+func (c CombinerServer) Shutdown() {
+	println("Waiting for all connections to finish...")
+	c.wg.Wait()
+}
+
 // Handler to recieve a POSTed JSON body encoding a Job and if it validates,
 // send it along to be fulfilled.
 func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
