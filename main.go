@@ -39,7 +39,7 @@ func main() {
 	switch {
 	case serverMode:
 		daemon.Listen(port)
-		println("Shutdown complete\n")
+		println("Shutdown complete")
 	default:
 		combineSynchronously()
 	}

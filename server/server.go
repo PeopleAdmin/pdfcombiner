@@ -4,7 +4,6 @@
 package server
 
 import (
-	"fmt"
 	"github.com/brasic/pdfcombiner/combiner"
 	"github.com/brasic/pdfcombiner/job"
 	"net"
@@ -36,7 +35,7 @@ func (c CombinerServer) Listen(listen_port int) {
 	println("Accepting connections on " + c.portString())
 	c.registerHandlers(listener)
 	http.Serve(listener, http.DefaultServeMux)
-	println("Waiting for all jobs to finish...\n")
+	println("Waiting for all jobs to finish...")
 	c.wg.Wait()
 }
 
@@ -77,8 +76,7 @@ func handleSignals(listener net.Listener) {
 	signal.Notify(sigs, os.Interrupt)
 	signal.Notify(sigs, syscall.SIGTERM)
 	go func() {
-		for sig := range sigs {
-			fmt.Printf("\ncaptured %v -- closing socket\n", sig)
+		for _ = range sigs {
 			listener.Close()
 		}
 	}()
