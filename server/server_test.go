@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"sync"
 )
 
 var (
@@ -42,6 +43,7 @@ func TestRejectsIncompleteRequest(t *testing.T) {
 }
 
 func TestAcceptsValidRequest(t *testing.T) {
+	handler.wg = new(sync.WaitGroup)
 	recorder := httptest.NewRecorder()
 	postBody := strings.NewReader(validJson)
 	req, _ := http.NewRequest("POST", "http://example.com/", postBody)

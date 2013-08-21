@@ -38,8 +38,8 @@ func main() {
 	verifyAws()
 	switch {
 	case serverMode:
-		daemon.Port = port
-		daemon.Listen()
+		daemon.Listen(port)
+		println("Shutdown complete\n")
 	default:
 		combineSynchronously()
 	}
