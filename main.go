@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	port       string
+	port       int
 	serverMode bool
 	bucket     string
 	employerId int
@@ -22,7 +22,7 @@ var (
 
 func init() {
 	flag.BoolVar(&serverMode, "server", false, "run in server mode")
-	flag.StringVar(&port, "port", "8080", "port to listen on for server mode")
+	flag.IntVar(&port, "port", 8080, "port to listen on for server mode")
 	flag.StringVar(&bucket, "bucket", "", "bucket name to use in standalone mode")
 	flag.IntVar(&employerId, "employer", 0, "id number of the employer to combine for in standalone mode")
 	flag.Parse()
@@ -37,7 +37,8 @@ func main() {
 	verifyAws()
 	switch {
 	case serverMode:
-		server.ListenOn(port)
+		daemon := server.CombinerServer{Port: port}
+		daemon.Listen()
 	default:
 		combineSynchronously()
 	}
