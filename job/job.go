@@ -54,6 +54,17 @@ func docsFromStrings(names []string) (docs []Document) {
 	return
 }
 
+// New is the default Job constructor.
+func New(bucket string, employer int, docs []string) (newJob *Job, err error) {
+  newJob = &Job{
+    BucketName: bucket,
+    EmployerID: employer,
+    DocList:    docsFromStrings(docs),
+  }
+  err = newJob.setup()
+  return
+}
+
 // NewFromJSON constructs a Job from an io.Reader containing JSON
 // conforming to the required portion of the Job schema.
 func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
