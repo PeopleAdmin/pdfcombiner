@@ -15,7 +15,7 @@ import (
 	"syscall"
 )
 
-type combinerServer struct {
+type CombinerServer struct {
 	port int
 	wg   *sync.WaitGroup
 }
@@ -25,7 +25,7 @@ var okMessage = []byte("{\"response\":\"ok\"}\n")
 
 // Start a HTTP server listening on `Port` to respond
 // to JSON-formatted combination requests.
-func (c combinerServer) Listen(listenPort int) {
+func (c CombinerServer) Listen(listenPort int) {
 	c.port = listenPort
 	c.wg = new(sync.WaitGroup)
 	listener, err := net.Listen("tcp", c.portString())
@@ -41,7 +41,7 @@ func (c combinerServer) Listen(listenPort int) {
 
 // Handler to recieve a POSTed JSON body encoding a Job and if it validates,
 // send it along to be fulfilled, keeping track of the in-flight job count.
-func (c combinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
+func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 	job, err := job.NewFromJson(r.Body)
 	if err != nil || !job.IsValid() {
 		http.Error(w, invalidMessage, http.StatusBadRequest)
@@ -56,14 +56,14 @@ func (c combinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 }
 
 // No-op handler for responding to things like health checks.
-func (c combinerServer) Ping(w http.ResponseWriter, r *http.Request) {}
+func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {}
 
 // http.ListenAndServe needs a string for the port.
-func (c combinerServer) portString() string {
+func (c CombinerServer) portString() string {
 	return ":" + strconv.Itoa(c.port)
 }
 
-func (c combinerServer) registerHandlers(listener net.Listener) {
+func (c CombinerServer) registerHandlers(listener net.Listener) {
 	http.HandleFunc("/health_check", c.Ping)
 	http.HandleFunc("/", c.ProcessJob)
 	handleSignals(listener)

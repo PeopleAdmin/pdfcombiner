@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	handler        = new(combinerServer)
+	handler        = new(CombinerServer)
 	invalidJson    = "{"
 	incompleteJson = "{}"
 	validJson      = `{"bucket_name":"asd","employer_id":606,"doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
