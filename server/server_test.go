@@ -11,9 +11,9 @@ import (
 
 var (
 	handler        = new(CombinerServer)
-	invalidJson    = "{"
-	incompleteJson = "{}"
-	validJson      = `{"bucket_name":"asd","employer_id":606,"doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
+	invalidJSON    = "{"
+	incompleteJSON = "{}"
+	validJSON      = `{"bucket_name":"asd","employer_id":606,"doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
 )
 
 func TestPing(t *testing.T) {
@@ -26,7 +26,7 @@ func TestPing(t *testing.T) {
 
 func TestRejectsInvalidRequest(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	postBody := strings.NewReader(invalidJson)
+	postBody := strings.NewReader(invalidJSON)
 	req, _ := http.NewRequest("POST", "http://example.com/", postBody)
 	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 400, recorder.Code)
@@ -35,7 +35,7 @@ func TestRejectsInvalidRequest(t *testing.T) {
 
 func TestRejectsIncompleteRequest(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	postBody := strings.NewReader(incompleteJson)
+	postBody := strings.NewReader(incompleteJSON)
 	req, _ := http.NewRequest("POST", "http://example.com/", postBody)
 	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 400, recorder.Code)
@@ -45,7 +45,7 @@ func TestRejectsIncompleteRequest(t *testing.T) {
 func TestAcceptsValidRequest(t *testing.T) {
 	handler.wg = new(sync.WaitGroup)
 	recorder := httptest.NewRecorder()
-	postBody := strings.NewReader(validJson)
+	postBody := strings.NewReader(validJSON)
 	req, _ := http.NewRequest("POST", "http://example.com/", postBody)
 	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 200, recorder.Code)

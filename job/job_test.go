@@ -15,7 +15,7 @@ func TestValidation(t *testing.T) {
 	newJob := &Job{
 		Callback:   "http://blah.com",
 		BucketName: "A",
-		EmployerId: 1,
+		EmployerID: 1,
 		DocList:    make([]Document, 0),
 	}
 	assert.False(t, newJob.IsValid(), "Job should not validate with an empty doclist")
@@ -23,7 +23,7 @@ func TestValidation(t *testing.T) {
 	assert.True(t, newJob.IsValid(), "Job should validate when inputs are valid")
 }
 
-func TestJsonDeserialization(t *testing.T) {
+func TestJSONDeserialization(t *testing.T) {
 	var cases = []struct {
 		in       string
 		validity bool
@@ -50,6 +50,6 @@ func TestCompletion(t *testing.T) {
 
 func newFromString(in string) (newJob *Job, err error) {
 	json := strings.NewReader(in)
-	newJob, err = NewFromJson(json)
+	newJob, err = NewFromJSON(json)
 	return
 }

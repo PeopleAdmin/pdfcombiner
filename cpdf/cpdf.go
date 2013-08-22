@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Combine the files located at the specified paths into a single pdf.
+// Merge combines the files located at the specified paths into a single pdf.
 func Merge(doclist []string, dir string) (outfile string, err error) {
 	outfile = getOutfile()
 	cmd := mergeCmd(doclist, outfile, dir)
@@ -25,13 +25,13 @@ func Merge(doclist []string, dir string) (outfile string, err error) {
 // "/bin/pdftk file1.pdf file2.pdf output 12345.pdf"
 func mergeCmd(doclist []string, outfile string, dir string) string {
 	cmdComponents := []string{
-		CmdPath(),
+		cmdPath(),
 		strings.Join(prefix(doclist, dir), " "),
 		("output " + dir + outfile)}
 	return strings.Join(cmdComponents, " ")
 }
 
-func CmdPath() string {
+func cmdPath() string {
 	pathToCmd, err := exec.LookPath("pdftk")
 	if err != nil {
 		log.Fatal("no pdftk found in path")

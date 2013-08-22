@@ -15,6 +15,9 @@ import (
 	"syscall"
 )
 
+// A CombinerServer needs a port to listen on and a WaitGroup to keep
+// track of how many background jobs it has spawned that have not yet
+// yet completed their work.
 type CombinerServer struct {
 	port int
 	wg   *sync.WaitGroup
@@ -23,8 +26,8 @@ type CombinerServer struct {
 var invalidMessage = `{"response":"invalid params"}`
 var okMessage = []byte("{\"response\":\"ok\"}\n")
 
-// Start a HTTP server listening on `Port` to respond
-// to JSON-formatted combination requests.
+// Listen starts a HTTP server listening on `Port` to respond to
+// JSON-formatted combination requests.
 func (c CombinerServer) Listen(listenPort int) {
 	c.port = listenPort
 	c.wg = new(sync.WaitGroup)
@@ -39,10 +42,11 @@ func (c CombinerServer) Listen(listenPort int) {
 	c.wg.Wait()
 }
 
-// Handler to recieve a POSTed JSON body encoding a Job and if it validates,
-// send it along to be fulfilled, keeping track of the in-flight job count.
+// ProcessJob is a handler to recieve a JSON body encoding a Job.  If
+// it validates, send it along to be fulfilled, keeping track of the
+// in-flight job count.
 func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
-	job, err := job.NewFromJson(r.Body)
+	job, err := job.NewFromJSON(r.Body)
 	if err != nil || !job.IsValid() {
 		http.Error(w, invalidMessage, http.StatusBadRequest)
 		return
@@ -55,7 +59,8 @@ func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-// No-op handler for responding to things like health checks.
+// Ping is no-op handler for responding to things like health checks.
+// It responds 200 OK with no content to all requests.
 func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {}
 
 // http.ListenAndServe needs a string for the port.

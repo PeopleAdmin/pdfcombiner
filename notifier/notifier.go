@@ -9,13 +9,14 @@ import (
 	"net/http"
 )
 
-// To create notifications, an object has to have a destination in mind
-// and be able to serialize itself into a JSON message.
+// Notifiable objects have a destination in mind and a way to serialize
+// themselves into a Reader that yields JSON text.
 type Notifiable interface {
 	Recipient() string
 	Content() io.Reader
 }
 
+// SendNotification sends an HTTP message to the recipient with the job status.
 func SendNotification(n Notifiable) (response *http.Response, err error) {
 	destination := n.Recipient()
 	payload := n.Content()
@@ -28,7 +29,6 @@ func SendNotification(n Notifiable) (response *http.Response, err error) {
 		fmt.Println("Error posting notification:",err)
 		return
 	}
-	fmt.Println("Notification response:", response)
 	body, err := ioutil.ReadAll(response.Body)
 	response.Body.Close()
 	fmt.Println("Notification response body:", string(body))

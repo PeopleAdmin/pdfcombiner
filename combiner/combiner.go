@@ -22,7 +22,7 @@ import (
 var (
 	downloadTimeout = 3 * time.Minute
 	basedir         = "/tmp/"
-	MaxGoroutines   = 30
+	maxGoroutines   = 30
 )
 
 // Get an individual file from S3.  If successful, writes the file out to disk
@@ -67,7 +67,7 @@ func getAllFiles(j *job.Job, dir string) {
 // Blocks until the number of Goroutines is less than a preset threshold.
 func throttle() {
 	for {
-		if runtime.NumGoroutine() < MaxGoroutines {
+		if runtime.NumGoroutine() < maxGoroutines {
 			break
 		}
 		time.Sleep(50 * time.Millisecond)
@@ -79,7 +79,7 @@ func throttle() {
 // e, or timeout.  Once all docs are accounted for, return the total number
 // of bytes recieved.
 func waitForDownloads(j *job.Job, c <-chan s.Stat, e <-chan s.Stat) (totalBytes int) {
-	for _, _ = range j.DocList {
+	for _ = range j.DocList {
 		select {
 		case packet := <-c:
 			log.Printf("%s was %d bytes\n", packet.Filename, packet.Size)
@@ -88,7 +88,7 @@ func waitForDownloads(j *job.Job, c <-chan s.Stat, e <-chan s.Stat) (totalBytes 
 		case bad := <-e:
 			j.AddError(bad.Filename, bad.Err)
 		case <-time.After(downloadTimeout):
-			j.AddError("general", errors.New("Timed out while downloading"))
+			j.AddError("general", errors.New("timed out while downloading"))
 			return
 		}
 	}
@@ -118,9 +118,9 @@ func mkTmpDir() (dirname string) {
 	return
 }
 
-// The entry point to this package.  Given a Job, download all the files,
-// combine them into a single one, upload it to AWS and post the status to
-// a callback endpoint.
+// Combine is the entry point to this package.  Given a Job, downloads
+// all the files, combines them into a single one, uploads it to AWS
+// and posts the status to a callback endpoint.
 func Combine(j *job.Job) bool {
 	defer postToCallback(j)
 	saveDir := mkTmpDir()

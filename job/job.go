@@ -22,7 +22,7 @@ import (
 // last two fields contain internal state.
 type Job struct {
 	BucketName string               `json:"bucket_name"`
-	EmployerId int                  `json:"employer_id"`
+	EmployerID int                  `json:"employer_id"`
 	DocList    []Document           `json:"doc_list"`
 	Downloaded []string             `json:"downloaded"`
 	Callback   string               `json:"callback"`
@@ -31,11 +31,15 @@ type Job struct {
 	bucket     *s3.Bucket
 }
 
+// A Document has a (file) name and a human readable title, possibly
+// used for watermarking prior to combination.
 type Document struct {
 	Name  string `json:"name"`
 	Title string `json:"title"`
 }
 
+// A JobResponse is sent as a notification.  It includes the success
+// status and a copy of the original job.
 type JobResponse struct {
 	Success bool `json:"success"`
 	Job     Job  `json:"job"`
@@ -50,86 +54,81 @@ func docsFromStrings(names []string) (docs []Document) {
 	return
 }
 
-func New(bucket string, employer int, docs []string) (newJob *Job, err error) {
-	newJob = &Job{
-		BucketName: bucket,
-		EmployerId: employer,
-		DocList:    docsFromStrings(docs),
-	}
-	err = newJob.setup()
-	return
-}
-
-// Construct a Job from an io.Reader containing JSON conforming to the
-// Job schema (excluding Errors, Downloaded, and bucket).
-func NewFromJson(encoded io.Reader) (newJob *Job, err error) {
+// NewFromJSON constructs a Job from an io.Reader containing JSON
+// conforming to the required portion of the Job schema.
+func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
 	newJob = &Job{}
 	err = json.NewDecoder(encoded).Decode(newJob)
 	if err != nil {
 		return
 	}
 	if !newJob.IsValid() {
-		err = errors.New("Missing required fields")
+		err = errors.New("missing required fields")
 		return
 	}
 	err = newJob.setup()
 	return
 }
 
-// Does the job contain all the fields necessary to start the combination?
+// IsValid determines whether the job contains all the fields necessary
+// to start the combination.
 func (j *Job) IsValid() bool {
 	return (j.BucketName != "") &&
 		(j.Callback != "") &&
-		(j.EmployerId > 0) &&
+		(j.EmployerID > 0) &&
 		(j.DocCount() > 0)
 }
 
-// Retrieve the requested document from S3 as a byte slice.
+// Get retrieves the requested document from S3 as a byte slice.
 func (j *Job) Get(docname string) (data []byte, err error) {
 	data, err = j.bucket.Get(j.s3Path(docname))
 	return
 }
 
-// The number of documents requested.
+// DocCount returns the number of documents requested.
 func (j *Job) DocCount() int {
 	return len(j.DocList)
 }
 
-// The number of documents actually completed.
+// CompleteCount returns the number of documents actually completed.
 func (j *Job) CompleteCount() int {
 	return len(j.Downloaded)
 }
 
-// Add a document to the list of completed (downloaded) docs.
+// MarkComplete adds a document to the list of downloaded docs.
 func (j *Job) MarkComplete(newdoc string, info stat.Stat) {
 	j.Downloaded = append(j.Downloaded, newdoc)
 	j.PerfStats[newdoc] = info
 }
 
-// Have any documents been successfully downloaded?
+// HasDownloadedDocs determines whether any documents been successfully
+// downloaded.
 // TODO is it appropriate to use this to determine success in ToJSON()?
 func (j *Job) HasDownloadedDocs() bool {
 	return len(j.Downloaded) > 0
 }
 
+// Recipient returns the notification URL to send status updates to.
 func (j *Job) Recipient() string {
 	return j.Callback
 }
 
-func (j *Job) ToJson() (json_response []byte) {
+// ToJSON serializes the Job into a JSON byte slice.
+func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
 		Job:     *j,
 		Success: j.HasDownloadedDocs()}
-	json_response, _ = json.Marshal(response)
-	fmt.Printf("%s\n", json_response)
+	jsonResponse, _ = json.Marshal(response)
+	fmt.Printf("%s\n", jsonResponse)
 	return
 }
 
+// Content returns a Reader object that yields the job as JSON.
 func (j *Job) Content() io.Reader {
-	return bytes.NewReader(j.ToJson())
+	return bytes.NewReader(j.ToJSON())
 }
 
-// Add to the list of encountered errors, translating obscure ones.
+// AddError adds to the list of encountered errors, translating obscure ones.
 func (j *Job) AddError(sourceFile string, newErr error) {
 	log.Println(newErr)
 	if strings.Contains(newErr.Error(), "Get : 301 response missing Location header") {
@@ -159,5 +158,5 @@ func (j *Job) connect() (err error) {
 
 // Construct an absolute path within a bucket to a given document.
 func (j *Job) s3Path(docname string) string {
-	return fmt.Sprintf("%d/docs/%s", j.EmployerId, docname)
+	return fmt.Sprintf("%d/docs/%s", j.EmployerID, docname)
 }
