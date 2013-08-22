@@ -25,8 +25,8 @@ var okMessage = []byte("{\"response\":\"ok\"}\n")
 
 // Start a HTTP server listening on `Port` to respond
 // to JSON-formatted combination requests.
-func (c combinerServer) Listen(listen_port int) {
-	c.port = listen_port
+func (c combinerServer) Listen(listenPort int) {
+	c.port = listenPort
 	c.wg = new(sync.WaitGroup)
 	listener, err := net.Listen("tcp", c.portString())
 	if err != nil {
