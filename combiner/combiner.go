@@ -16,6 +16,7 @@ import (
 	"math/rand"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -35,7 +36,7 @@ func getFile(j *job.Job, docname string, dir string, c chan<- s.Stat, e chan<- s
 		e <- s.Stat{Filename: docname, Err: err}
 		return
 	}
-	path := dir + docname
+	path := localPath(dir, docname)
 	err = ioutil.WriteFile(path, data, 0644)
 	if err != nil {
 		e <- s.Stat{Filename: docname, Err: err}
@@ -129,4 +130,10 @@ func Combine(j *job.Job) bool {
 		cpdf.Merge(j.Downloaded, saveDir)
 	}
 	return true
+}
+
+// localPath replaces any s3 key directory markers with underscores so
+// we don't need to recursively create directories when saving files.
+func localPath(dir, remotePath string) string {
+	return dir + strings.Replace(remotePath, "/", "_", -1)
 }
