@@ -4,8 +4,8 @@
 package server
 
 import (
-	"github.com/peopleadmin/pdfcombiner/combiner"
-	"github.com/peopleadmin/pdfcombiner/job"
+	"github.com/PeopleAdmin/pdfcombiner/combiner"
+	"github.com/PeopleAdmin/pdfcombiner/job"
 	"net"
 	"net/http"
 	"os"

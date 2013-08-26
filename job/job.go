@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/peopleadmin/pdfcombiner/stat"
+	"github.com/PeopleAdmin/pdfcombiner/stat"
 	"io"
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"

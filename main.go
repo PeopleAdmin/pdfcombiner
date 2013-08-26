@@ -6,9 +6,9 @@ package main
 
 import (
 	"flag"
-	"github.com/peopleadmin/pdfcombiner/combiner"
-	"github.com/peopleadmin/pdfcombiner/job"
-	"github.com/peopleadmin/pdfcombiner/server"
+	"github.com/PeopleAdmin/pdfcombiner/combiner"
+	"github.com/PeopleAdmin/pdfcombiner/job"
+	"github.com/PeopleAdmin/pdfcombiner/server"
 	"launchpad.net/goamz/aws"
 	"os"
 )
