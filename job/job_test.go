@@ -1,7 +1,7 @@
 package job
 
 import (
-	"github.com/peopleadmin/pdfcombiner/stat"
+	"github.com/PeopleAdmin/pdfcombiner/stat"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
