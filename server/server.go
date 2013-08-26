@@ -4,8 +4,8 @@
 package server
 
 import (
-	"github.com/brasic/pdfcombiner/combiner"
-	"github.com/brasic/pdfcombiner/job"
+	"github.com/peopleadmin/pdfcombiner/combiner"
+	"github.com/peopleadmin/pdfcombiner/job"
 	"net"
 	"net/http"
 	"os"

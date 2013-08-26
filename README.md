@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/brasic/pdfcombiner.png)](https://travis-ci.org/brasic/pdfcombiner)
+[![Build Status](https://travis-ci.org/PeopleAdmin/pdfcombiner.png)](https://travis-ci.org/PeopleAdmin/pdfcombiner)
 pdfcombiner
 ===========
 

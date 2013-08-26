@@ -6,9 +6,9 @@ package main
 
 import (
 	"flag"
-	"github.com/brasic/pdfcombiner/combiner"
-	"github.com/brasic/pdfcombiner/job"
-	"github.com/brasic/pdfcombiner/server"
+	"github.com/peopleadmin/pdfcombiner/combiner"
+	"github.com/peopleadmin/pdfcombiner/job"
+	"github.com/peopleadmin/pdfcombiner/server"
 	"launchpad.net/goamz/aws"
 	"os"
 )
