@@ -148,6 +148,7 @@ func (j *Job) AddError(sourceFile string, newErr error) {
 // Initialize the fields which don't have usable zero-values.
 func (j *Job) setup() (err error) {
 	err = j.connect()
+	j.Downloaded = make([]string, 0, len(j.DocList))
 	j.Errors = make(map[string]string)
 	j.PerfStats = make(map[string]stat.Stat)
 	return
