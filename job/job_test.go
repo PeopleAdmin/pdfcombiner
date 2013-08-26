@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var validJSON = `{"bucket_name":"asd","employer_id":606,"doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
+var validJSON = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
 
 func TestValidation(t *testing.T) {
 	invalidJob := &Job{}
@@ -15,7 +15,6 @@ func TestValidation(t *testing.T) {
 	newJob := &Job{
 		Callback:   "http://blah.com",
 		BucketName: "A",
-		EmployerID: 1,
 		DocList:    make([]Document, 0),
 	}
 	assert.False(t, newJob.IsValid(), "Job should not validate with an empty doclist")

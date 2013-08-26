@@ -13,7 +13,7 @@ var (
 	handler        = new(CombinerServer)
 	invalidJSON    = "{"
 	incompleteJSON = "{}"
-	validJSON      = `{"bucket_name":"asd","employer_id":606,"doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
+	validJSON      = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
 )
 
 func TestPing(t *testing.T) {

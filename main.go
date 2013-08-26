@@ -17,7 +17,6 @@ var (
 	port       int
 	serverMode bool
 	bucket     string
-	employerId int
 	daemon     server.CombinerServer
 )
 
@@ -25,7 +24,6 @@ func init() {
 	flag.BoolVar(&serverMode, "server", false, "run in server mode")
 	flag.IntVar(&port, "port", 8080, "port to listen on for server mode")
 	flag.StringVar(&bucket, "bucket", "", "bucket name to use in standalone mode")
-	flag.IntVar(&employerId, "employer", 0, "id number of the employer to combine for in standalone mode")
 	flag.Parse()
 	flag.Usage = func() {
 		println("Usage: pdfcombiner [OPTS] [FILE...]")
@@ -49,7 +47,7 @@ func main() {
 func combineSynchronously() {
 	checkArgs()
 	pdfFiles := flag.Args()
-	j, err := job.New(bucket, employerId, pdfFiles)
+	j, err := job.New(bucket, pdfFiles)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +59,7 @@ func checkArgs() {
 	case flag.NArg() < 1:
 		println("Cannot start in standalone mode with no files to combine.")
 		flag.Usage()
-	case (employerId == 0 || bucket == ""):
+	case bucket == "":
 		println("Missing argument")
 		flag.Usage()
 	}

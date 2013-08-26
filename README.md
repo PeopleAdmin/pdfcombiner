@@ -10,10 +10,9 @@ look like:
 ```json
 {
   "bucket_name": "somebucket",
-  "employer_id": 123,
   "doc_list": [
-    "1.pdf",
-    "2.pdf"
+    "realfile.pdf",
+    "nonexistent_file"
   ],
   "callback": "http://mycallbackurl.com/combination_result/12345"
 }
@@ -29,8 +28,8 @@ or
     HTTP/1.1 400 Bad Request
     {"response":"invalid params"}
 
-and begin processing the file.  When work is complete, the provided
-callback URL will recieve a POST with a JSON body similar to:
+When work is complete, the provided callback URL will recieve a POST
+with a JSON body similar to:
 
 ```json
 {
@@ -38,7 +37,6 @@ callback URL will recieve a POST with a JSON body similar to:
   "combined_file": "path/to/combined/file.pdf",
   "job": {
     "bucket_name": "somebucket",
-    "employer_id": 123,
     "doc_list": [
       "realfile.pdf",
       "nonexistent_file"

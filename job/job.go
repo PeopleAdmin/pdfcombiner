@@ -22,7 +22,6 @@ import (
 // last two fields contain internal state.
 type Job struct {
 	BucketName string               `json:"bucket_name"`
-	EmployerID int                  `json:"employer_id"`
 	DocList    []Document           `json:"doc_list"`
 	Downloaded []string             `json:"downloaded"`
 	Callback   string               `json:"callback"`
@@ -55,10 +54,9 @@ func docsFromStrings(names []string) (docs []Document) {
 }
 
 // New is the default Job constructor.
-func New(bucket string, employer int, docs []string) (newJob *Job, err error) {
+func New(bucket string, docs []string) (newJob *Job, err error) {
   newJob = &Job{
     BucketName: bucket,
-    EmployerID: employer,
     DocList:    docsFromStrings(docs),
   }
   err = newJob.setup()
@@ -86,7 +84,6 @@ func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
 func (j *Job) IsValid() bool {
 	return (j.BucketName != "") &&
 		(j.Callback != "") &&
-		(j.EmployerID > 0) &&
 		(j.DocCount() > 0)
 }
 
@@ -169,5 +166,5 @@ func (j *Job) connect() (err error) {
 
 // Construct an absolute path within a bucket to a given document.
 func (j *Job) s3Path(docname string) string {
-	return fmt.Sprintf("%d/docs/%s", j.EmployerID, docname)
+	return docname
 }
