@@ -20,7 +20,7 @@ import (
 // yet completed their work.
 type CombinerServer struct {
 	port int
-	wg   *sync.WaitGroup
+	pending   *sync.WaitGroup
 }
 
 var invalidMessage = `{"response":"invalid params"}`
@@ -30,7 +30,7 @@ var okMessage = []byte("{\"response\":\"ok\"}\n")
 // JSON-formatted combination requests.
 func (c CombinerServer) Listen(listenPort int) {
 	c.port = listenPort
-	c.wg = new(sync.WaitGroup)
+	c.pending = new(sync.WaitGroup)
 	listener, err := net.Listen("tcp", c.portString())
 	if err != nil {
 		panic(err)
@@ -39,7 +39,7 @@ func (c CombinerServer) Listen(listenPort int) {
 	c.registerHandlers(listener)
 	http.Serve(listener, http.DefaultServeMux)
 	println("Waiting for all jobs to finish...")
-	c.wg.Wait()
+	c.pending.Wait()
 }
 
 // ProcessJob is a handler to recieve a JSON body encoding a Job.  If
@@ -52,9 +52,9 @@ func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(okMessage)
-	c.wg.Add(1)
+	c.registerWorker()
 	go func() {
-		defer c.wg.Done()
+		defer c.unregisterWorker()
 		combiner.Combine(job)
 	}()
 }
@@ -66,6 +66,16 @@ func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {}
 // http.ListenAndServe needs a string for the port.
 func (c CombinerServer) portString() string {
 	return ":" + strconv.Itoa(c.port)
+}
+
+// registerWorker increments the count of in-progress jobs
+func (c CombinerServer) registerWorker() {
+	c.pending.Add(1)
+}
+
+// workerDone decrements the count of in-progress jobs.
+func (c CombinerServer) unregisterWorker() {
+	c.pending.Done()
 }
 
 func (c CombinerServer) registerHandlers(listener net.Listener) {
