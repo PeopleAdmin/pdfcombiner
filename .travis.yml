@@ -1,10 +1,19 @@
+---
 language: go
 go: 1.1
 env:
   global:
-    - AWS_ACCESS_KEY_ID=FAKE
-    - AWS_SECRET_ACCESS_KEY=FAKE
-
+  - AWS_ACCESS_KEY_ID=FAKE
+  - AWS_SECRET_ACCESS_KEY=FAKE
 before_install: go get -v github.com/stretchr/testify
 script:
-  - go test -v ./...
+- go test -v ./...
+notifications:
+  email: false
+  campfire:
+    rooms:
+    - secure: ! 'oDwfYvkLMbe8j5nbOPdzQag0UNXRrAip4TI9B+te4MA4++o/V4ioOyvDlrjL
+
+        3WFC7ox2smzwWnLAa6iPQa4xQpH6iGnrhXOUkKjQSlxc3Yiz95SmG0KlOVII
+
+        G2X4YLqAi9NCALBNPPK+gWVP8IQk803Lgz6AhYkeJLGxyneASD4='
