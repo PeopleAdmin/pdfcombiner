@@ -5,7 +5,10 @@ env:
   global:
   - AWS_ACCESS_KEY_ID=FAKE
   - AWS_SECRET_ACCESS_KEY=FAKE
-before_install: go get -v github.com/stretchr/testify
+before_install:
+- go get -v github.com/stretchr/testify
+- touch ~/cpdf && chmod +x ~/cpdf
+- export PATH=$HOME:$PATH
 script:
 - go test -v ./...
 notifications:
