@@ -3,62 +3,39 @@ package cpdf
 
 import (
 	"fmt"
-	"github.com/kless/shutil/sh"
-	"log"
 	"os/exec"
-	"strings"
-	"time"
 )
 
+// Panic at import time if cpdf not found.
+var cpdf = cmdPath()
+
 // Merge combines the files located at the specified paths into a single pdf.
-func Merge(doclist []string, dir string) (outfile string, err error) {
-	outfile = getOutfile()
-	cmd := mergeCmd(doclist, outfile, dir)
-	out, err := sh.Run(cmd)
-	log.Println(cmd)
-	log.Println(out)
-	log.Println(err)
+func Merge(doclist []string, outfile string) (err error) {
+	combine_cmd := exec.Command(cpdf)
+	combine_cmd.Args = cpdfMergeArgs(doclist, outfile)
+	out, failed := combine_cmd.CombinedOutput()
+	if failed != nil {
+		err = fmt.Errorf("%v - %s", failed, out)
+	}
 	return
 }
 
-// Constructs the command string to pdftk -- looks like
-// "/bin/pdftk file1.pdf file2.pdf output 12345.pdf"
-func mergeCmd(doclist []string, outfile string, dir string) string {
-	cmdComponents := []string{
-		cmdPath(),
-		strings.Join(prefix(doclist, dir), " "),
-		("output " + dir + outfile)}
-	return strings.Join(cmdComponents, " ")
-}
-
+// cmdPath returns the absolute path to the cpdf executable.
 func cmdPath() string {
-	pathToCmd, err := exec.LookPath("pdftk")
+	pathToCmd, err := exec.LookPath("cpdf")
 	if err != nil {
-		log.Fatal("no pdftk found in path")
+		panic("no cpdf found in path")
 	}
 	return pathToCmd
 }
 
-func getOutfile() string {
-	return fmt.Sprintf("%d.pdf", time.Now().Unix())
-}
-
-// Prefix a list of files with a given directory path.
-func prefix(files []string, dir string) []string {
-	prefixed := make([]string, len(files))
-	for idx, file := range files {
-		prefixed[idx] = dir + file
-	}
-	return prefixed
-}
-
 // Given a slice of documents, construct an args slice suitable for
 // passing to 'cpdf merge'.
-func cpdfMergeArgs(doclist []string) (args []string) {
+func cpdfMergeArgs(doclist []string, outfile string) (args []string) {
 	args = []string{"merge"}
 	for _, doc := range doclist {
 		args = append(args, doc)
 	}
-	args = append(args, "-o", "combined.pdf")
+	args = append(args, "-o", outfile)
 	return
 }

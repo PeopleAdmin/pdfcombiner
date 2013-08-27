@@ -6,11 +6,11 @@ package combiner
 import (
 	"errors"
 	"fmt"
-	"github.com/brasic/pdfreader/pdfread"
 	"github.com/PeopleAdmin/pdfcombiner/cpdf"
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"github.com/PeopleAdmin/pdfcombiner/notifier"
 	s "github.com/PeopleAdmin/pdfcombiner/stat"
+	"github.com/brasic/pdfreader/pdfread"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -127,9 +127,22 @@ func Combine(j *job.Job) bool {
 	saveDir := mkTmpDir()
 	getAllFiles(j, saveDir)
 	if j.HasDownloadedDocs() {
-		cpdf.Merge(j.Downloaded, saveDir)
+		err := cpdf.Merge(fsPathsOf(j.Downloaded, saveDir), saveDir+"combined.pdf")
+		if err != nil {
+			j.AddError("general", err)
+			return false
+		}
 	}
 	return true
+}
+
+// Get the absolute paths to a list of docs.
+func fsPathsOf(docs []string, dir string) (paths []string) {
+	paths = make([]string, len(docs))
+	for idx, doc := range docs {
+		paths[idx] = localPath(dir, doc)
+	}
+	return
 }
 
 // localPath replaces any s3 key directory markers with underscores so
