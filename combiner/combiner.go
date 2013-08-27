@@ -25,6 +25,28 @@ var (
 	maxGoroutines   = 30
 )
 
+// Combine is the entry point to this package.  Given a Job, downloads
+// all the files, combines them into a single one, uploads it to AWS
+// and posts the status to a callback endpoint.
+func Combine(j *job.Job) {
+	defer postToCallback(j)
+	saveDir := mkTmpDir()
+	getAllFiles(j, saveDir)
+	if !j.HasDownloadedDocs() {
+		return
+	}
+
+	componentPaths := fsPathsOf(j.Downloaded, saveDir)
+	combinedPath := saveDir + "combined.pdf"
+	err := cpdf.Merge(componentPaths, combinedPath, "The document title")
+	if err != nil {
+		j.AddError("general", err)
+		return
+	}
+	j.UploadCombinedFile(combinedPath)
+	return
+}
+
 // Get an individual file from S3.  If successful, writes the file out to disk
 // and sends a stat object back to the main channel.  If there are errors they
 // are sent back through the error channel.
@@ -115,28 +137,6 @@ func mkTmpDir() (dirname string) {
 	rand.Seed(time.Now().UnixNano())
 	dirname = fmt.Sprintf("/tmp/pdfcombiner/%d/", rand.Int())
 	os.MkdirAll(dirname, 0777)
-	return
-}
-
-// Combine is the entry point to this package.  Given a Job, downloads
-// all the files, combines them into a single one, uploads it to AWS
-// and posts the status to a callback endpoint.
-func Combine(j *job.Job) {
-	defer postToCallback(j)
-	saveDir := mkTmpDir()
-	getAllFiles(j, saveDir)
-	if !j.HasDownloadedDocs() {
-		return
-	}
-
-	componentPaths := fsPathsOf(j.Downloaded, saveDir)
-	combinedPath := saveDir + "combined.pdf"
-	err := cpdf.Merge(componentPaths, combinedPath, "The document title")
-	if err != nil {
-		j.AddError("general", err)
-		return
-	}
-	j.UploadCombinedFile(combinedPath)
 	return
 }
 
