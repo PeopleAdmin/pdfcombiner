@@ -11,14 +11,14 @@ import (
 // Panic at import time if cpdf not found.
 var cpdf = cmdPath()
 
-// Merge combines the files located at the specified paths into a single pdf.
-func Merge(doclist []string, outfile string) (err error) {
-	combine_cmd := exec.Command(cpdf)
-	combine_cmd.Args = cpdfMergeArgs(doclist, outfile)
-	out, failed := combine_cmd.CombinedOutput()
-	if failed != nil {
-		err = fmt.Errorf("%v - %s", failed, out)
+// Merge combines the files located at the specified paths into a
+// single pdf with a custom header.
+func Merge(doclist []string, outfile, title string) (err error) {
+	err = execMerge(doclist, outfile)
+	if err != nil {
+		return
 	}
+	err = addHeader(outfile, title)
 	return
 }
 
@@ -30,6 +30,28 @@ func PageCount(filePath string) (result int) {
 	}
 	trimmed := strings.Trim(string(out), " \n")
 	result, _ = strconv.Atoi(trimmed)
+	return
+}
+
+
+func execMerge(doclist []string, outfile string) (err error) {
+	cmd := exec.Command(cpdf)
+	cmd.Args = cpdfMergeArgs(doclist, outfile)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		err = fmt.Errorf("%v - %s", err, out)
+	}
+	return
+}
+
+func addHeader(filePath, title string) (err error) {
+	headerText := "Page %Page of %EndPage | Created %m-%d-%Y %T | " + title
+	cmd := exec.Command(cpdf, "-add-text", headerText,
+		"-top", "15", "-font", "Courier", filePath, "-o", filePath)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		err = fmt.Errorf("%v - %s", err, out)
+	}
 	return
 }
 

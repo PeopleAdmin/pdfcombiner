@@ -125,14 +125,18 @@ func Combine(j *job.Job) bool {
 	defer postToCallback(j)
 	saveDir := mkTmpDir()
 	getAllFiles(j, saveDir)
-	if j.HasDownloadedDocs() {
-		err := cpdf.Merge(fsPathsOf(j.Downloaded, saveDir), saveDir+"combined.pdf")
-		if err != nil {
-			j.AddError("general", err)
-			return false
-		}
+	if !j.HasDownloadedDocs() {
+		return false
 	}
-	j.UploadCombinedFile(saveDir + "combined.pdf")
+
+	componentPaths := fsPathsOf(j.Downloaded, saveDir)
+	combinedPath := saveDir + "combined.pdf"
+	err := cpdf.Merge(componentPaths, combinedPath, "The document title")
+	if err != nil {
+		j.AddError("general", err)
+		return false
+	}
+	j.UploadCombinedFile(combinedPath)
 	return true
 }
 
