@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
-	"fmt"
 )
 
 var validJSON = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090","combined_key":"out.pdf"}`
@@ -36,7 +35,6 @@ func TestJSONDeserialization(t *testing.T) {
 	}
 	for _, c := range cases {
 		newJob, err := newFromString(c.in)
-		fmt.Println(newJob)
 		assert.Equal(t, newJob.IsValid(), c.validity, "validity should be as expected for "+c.in)
 		assert.Equal(t, (err == nil), c.validity, "error should be returned if something went wrong for "+c.in)
 	}
