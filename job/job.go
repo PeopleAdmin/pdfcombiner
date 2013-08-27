@@ -26,6 +26,7 @@ type Job struct {
 	DocList        []Document           `json:"doc_list"`
 	Downloaded     []string             `json:"downloaded"`
 	CombinedKey    string               `json:"combined_key"`
+	Title          string               `json:"title,omitempty"`
 	Callback       string               `json:"callback"`
 	Errors         map[string]string    `json:"errors"`
 	PerfStats      map[string]stat.Stat `json:"perf_stats"`
