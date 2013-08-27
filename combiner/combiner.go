@@ -10,7 +10,6 @@ import (
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"github.com/PeopleAdmin/pdfcombiner/notifier"
 	s "github.com/PeopleAdmin/pdfcombiner/stat"
-	"github.com/brasic/pdfreader/pdfread"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -42,7 +41,7 @@ func getFile(j *job.Job, docname string, dir string, c chan<- s.Stat, e chan<- s
 		e <- s.Stat{Filename: docname, Err: err}
 		return
 	}
-	pagecount := pdfread.Load(path).PageCount()
+	pagecount := cpdf.PageCount(path)
 	c <- s.Stat{Filename: docname,
 		Size:      len(data),
 		PageCount: pagecount,

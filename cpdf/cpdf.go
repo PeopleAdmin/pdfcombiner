@@ -4,6 +4,8 @@ package cpdf
 import (
 	"fmt"
 	"os/exec"
+	"strconv"
+	"strings"
 )
 
 // Panic at import time if cpdf not found.
@@ -17,6 +19,17 @@ func Merge(doclist []string, outfile string) (err error) {
 	if failed != nil {
 		err = fmt.Errorf("%v - %s", failed, out)
 	}
+	return
+}
+
+func PageCount(filePath string) (result int) {
+	cmd := exec.Command(cpdf, "-pages", filePath)
+	out, err := cmd.Output()
+	if err != nil {
+		return -1
+	}
+	trimmed := strings.Trim(string(out), " \n")
+	result, _ = strconv.Atoi(trimmed)
 	return
 }
 
