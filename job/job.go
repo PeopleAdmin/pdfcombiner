@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/stat"
 	"io"
+	"io/ioutil"
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
@@ -21,13 +22,15 @@ import (
 // It is mainly constructed from a JSON string in a HTTP request, but the
 // last two fields contain internal state.
 type Job struct {
-	BucketName string               `json:"bucket_name"`
-	DocList    []Document           `json:"doc_list"`
-	Downloaded []string             `json:"downloaded"`
-	Callback   string               `json:"callback"`
-	Errors     map[string]string    `json:"errors"`
-	PerfStats  map[string]stat.Stat `json:"perf_stats"`
-	bucket     *s3.Bucket
+	BucketName     string               `json:"bucket_name"`
+	DocList        []Document           `json:"doc_list"`
+	Downloaded     []string             `json:"downloaded"`
+	CombinedKey    string               `json:"combined_key"`
+	Callback       string               `json:"callback"`
+	Errors         map[string]string    `json:"errors"`
+	PerfStats      map[string]stat.Stat `json:"perf_stats"`
+	uploadComplete bool
+	bucket         *s3.Bucket
 }
 
 // A Document has a (file) name and a human readable title, possibly
@@ -55,12 +58,12 @@ func docsFromStrings(names []string) (docs []Document) {
 
 // New is the default Job constructor.
 func New(bucket string, docs []string) (newJob *Job, err error) {
-  newJob = &Job{
-    BucketName: bucket,
-    DocList:    docsFromStrings(docs),
-  }
-  err = newJob.setup()
-  return
+	newJob = &Job{
+		BucketName: bucket,
+		DocList:    docsFromStrings(docs),
+	}
+	err = newJob.setup()
+	return
 }
 
 // NewFromJSON constructs a Job from an io.Reader containing JSON
@@ -83,6 +86,7 @@ func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
 // to start the combination.
 func (j *Job) IsValid() bool {
 	return (j.BucketName != "") &&
+		(j.CombinedKey != "") &&
 		(j.Callback != "") &&
 		(j.DocCount() > 0)
 }
@@ -90,6 +94,21 @@ func (j *Job) IsValid() bool {
 // Get retrieves the requested document from S3 as a byte slice.
 func (j *Job) Get(docname string) (data []byte, err error) {
 	data, err = j.bucket.Get(j.s3Path(docname))
+	return
+}
+
+// UploadCombinedFile sends a file to the job's CombinedKey on S3.
+func (j *Job) UploadCombinedFile(localPath string) (err error) {
+	content, err := ioutil.ReadFile(localPath)
+	if err != nil {
+		j.AddError(j.CombinedKey, err)
+		return
+	}
+	err = j.bucket.Put(j.CombinedKey, content, "application/pdf", s3.Private)
+	if err != nil {
+		j.AddError(j.CombinedKey, err)
+	}
+	j.uploadComplete = true
 	return
 }
 
@@ -125,7 +144,7 @@ func (j *Job) Recipient() string {
 func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
 		Job:     *j,
-		Success: j.HasDownloadedDocs()}
+		Success: j.uploadComplete}
 	jsonResponse, _ = json.Marshal(response)
 	fmt.Printf("%s\n", jsonResponse)
 	return

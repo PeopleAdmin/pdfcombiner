@@ -5,9 +5,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+	"fmt"
 )
 
-var validJSON = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
+var validJSON = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090","combined_key":"out.pdf"}`
 
 func TestValidation(t *testing.T) {
 	invalidJob := &Job{}
@@ -19,6 +20,8 @@ func TestValidation(t *testing.T) {
 	}
 	assert.False(t, newJob.IsValid(), "Job should not validate with an empty doclist")
 	newJob.DocList = append(newJob.DocList, Document{Name: "doc.pdf"})
+	assert.False(t, newJob.IsValid(), "Job should not validate with a missing upload key")
+	newJob.CombinedKey = "out.pdf"
 	assert.True(t, newJob.IsValid(), "Job should validate when inputs are valid")
 }
 
@@ -33,6 +36,7 @@ func TestJSONDeserialization(t *testing.T) {
 	}
 	for _, c := range cases {
 		newJob, err := newFromString(c.in)
+		fmt.Println(newJob)
 		assert.Equal(t, newJob.IsValid(), c.validity, "validity should be as expected for "+c.in)
 		assert.Equal(t, (err == nil), c.validity, "error should be returned if something went wrong for "+c.in)
 	}

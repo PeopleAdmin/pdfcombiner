@@ -13,7 +13,7 @@ var (
 	handler        = new(CombinerServer)
 	invalidJSON    = "{"
 	incompleteJSON = "{}"
-	validJSON      = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090"}`
+	validJSON      = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090","combined_key":"out.pdf"}`
 )
 
 func TestPing(t *testing.T) {
@@ -43,7 +43,7 @@ func TestRejectsIncompleteRequest(t *testing.T) {
 }
 
 func TestAcceptsValidRequest(t *testing.T) {
-	handler.wg = new(sync.WaitGroup)
+	handler.pending = new(sync.WaitGroup)
 	recorder := httptest.NewRecorder()
 	postBody := strings.NewReader(validJSON)
 	req, _ := http.NewRequest("POST", "http://example.com/", postBody)

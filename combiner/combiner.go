@@ -133,6 +133,7 @@ func Combine(j *job.Job) bool {
 			return false
 		}
 	}
+	j.UploadCombinedFile(saveDir + "combined.pdf")
 	return true
 }
 
