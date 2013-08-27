@@ -121,12 +121,12 @@ func mkTmpDir() (dirname string) {
 // Combine is the entry point to this package.  Given a Job, downloads
 // all the files, combines them into a single one, uploads it to AWS
 // and posts the status to a callback endpoint.
-func Combine(j *job.Job) bool {
+func Combine(j *job.Job) {
 	defer postToCallback(j)
 	saveDir := mkTmpDir()
 	getAllFiles(j, saveDir)
 	if !j.HasDownloadedDocs() {
-		return false
+		return
 	}
 
 	componentPaths := fsPathsOf(j.Downloaded, saveDir)
@@ -134,10 +134,10 @@ func Combine(j *job.Job) bool {
 	err := cpdf.Merge(componentPaths, combinedPath, "The document title")
 	if err != nil {
 		j.AddError("general", err)
-		return false
+		return
 	}
 	j.UploadCombinedFile(combinedPath)
-	return true
+	return
 }
 
 // Get the absolute paths to a list of docs.
