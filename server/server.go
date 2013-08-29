@@ -19,8 +19,8 @@ import (
 // track of how many background jobs it has spawned that have not yet
 // yet completed their work.
 type CombinerServer struct {
-	port int
-	pending   *sync.WaitGroup
+	port    int
+	pending *sync.WaitGroup
 }
 
 var invalidMessage = []byte("{\"response\":\"invalid params\"}\n")
