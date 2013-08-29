@@ -30,6 +30,7 @@ var (
 // and posts the status to a callback endpoint.
 func Combine(j *job.Job) {
 	defer postToCallback(j)
+	startAll := time.Now()
 	saveDir := mkTmpDir()
 	getAllFiles(j, saveDir)
 	if !j.HasDownloadedDocs() {
@@ -43,7 +44,10 @@ func Combine(j *job.Job) {
 		j.AddError("general", err)
 		return
 	}
+	startUpload := time.Now()
 	j.UploadCombinedFile(combinedPath)
+	j.PerfStats["upload"] = s.Stat{DlTime: time.Since(startUpload)}
+	j.PerfStats["total"] = s.Stat{DlTime: time.Since(startAll)}
 	return
 }
 
