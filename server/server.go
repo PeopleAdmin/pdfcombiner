@@ -6,6 +6,7 @@ package server
 import (
 	"github.com/PeopleAdmin/pdfcombiner/combiner"
 	"github.com/PeopleAdmin/pdfcombiner/job"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
+	"fmt"
 )
 
 // A CombinerServer needs a port to listen on and a WaitGroup to keep
@@ -21,6 +23,10 @@ import (
 type CombinerServer struct {
 	port    int
 	pending *sync.WaitGroup
+}
+
+type NetLoggable interface {
+	Message(*http.Request) string
 }
 
 var invalidMessage = []byte("{\"response\":\"invalid params\"}\n")
@@ -47,8 +53,9 @@ func (c CombinerServer) Listen(listenPort int) {
 // in-flight job count.
 func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	job, err := job.NewFromJSON(r.Body)
-	if err != nil || !job.IsValid() {
+	j, err := job.NewFromJSON(r.Body)
+	logJobReceipt(r,j)
+	if err != nil || !j.IsValid() {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(invalidMessage)
 		return
@@ -57,13 +64,23 @@ func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 	c.registerWorker()
 	go func() {
 		defer c.unregisterWorker()
-		combiner.Combine(job)
+		combiner.Combine(j)
 	}()
 }
 
 // Ping is no-op handler for responding to things like health checks.
 // It responds 200 OK with no content to all requests.
-func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {}
+func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {
+  log.Println(requestInfo(r))
+}
+
+func logJobReceipt(r *http.Request, j *job.Job) {
+	log.Printf("%v, callback: %v\n", requestInfo(r), j.Callback)
+}
+
+func requestInfo(r *http.Request) string {
+  return fmt.Sprintf("%v %v from %v", r.Method, r.URL, r.RemoteAddr)
+}
 
 // http.ListenAndServe needs a string for the port.
 func (c CombinerServer) portString() string {
