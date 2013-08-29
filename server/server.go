@@ -23,7 +23,7 @@ type CombinerServer struct {
 	pending   *sync.WaitGroup
 }
 
-var invalidMessage = `{"response":"invalid params"}`
+var invalidMessage = []byte("{\"response\":\"invalid params\"}\n")
 var okMessage = []byte("{\"response\":\"ok\"}\n")
 
 // Listen starts a HTTP server listening on `Port` to respond to
@@ -46,9 +46,11 @@ func (c CombinerServer) Listen(listenPort int) {
 // it validates, send it along to be fulfilled, keeping track of the
 // in-flight job count.
 func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	job, err := job.NewFromJSON(r.Body)
 	if err != nil || !job.IsValid() {
-		http.Error(w, invalidMessage, http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(invalidMessage)
 		return
 	}
 	w.Write(okMessage)
