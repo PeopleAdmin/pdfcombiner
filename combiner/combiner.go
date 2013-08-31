@@ -14,7 +14,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -92,12 +91,7 @@ func getAllFiles(j *job.Job, dir string) {
 // Prevents the system from being overwhelmed with work.
 // Blocks until the number of Goroutines is less than a preset threshold.
 func throttle() {
-	for {
-		if runtime.NumGoroutine() < maxGoroutines {
-			break
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
+	return
 }
 
 // Listen on several channels for information from background download
