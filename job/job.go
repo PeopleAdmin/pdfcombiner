@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/stat"
+	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"io"
 	"io/ioutil"
 	"launchpad.net/goamz/aws"
@@ -94,12 +95,17 @@ func (j *Job) IsValid() bool {
 
 // Get retrieves the requested document from S3 as a byte slice.
 func (j *Job) Get(docname string) (data []byte, err error) {
-	data, err = j.bucket.Get(j.s3Path(docname))
+	if !testmode.IsEnabled() {
+		data, err = j.bucket.Get(j.s3Path(docname))
+	}
 	return
 }
 
 // UploadCombinedFile sends a file to the job's CombinedKey on S3.
 func (j *Job) UploadCombinedFile(localPath string) (err error) {
+	if testmode.IsEnabled() {
+		return
+	}
 	content, err := ioutil.ReadFile(localPath)
 	if err != nil {
 		j.AddError(j.CombinedKey, err)

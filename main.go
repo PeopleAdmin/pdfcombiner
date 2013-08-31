@@ -9,6 +9,7 @@ import (
 	"github.com/PeopleAdmin/pdfcombiner/combiner"
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"github.com/PeopleAdmin/pdfcombiner/server"
+	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"launchpad.net/goamz/aws"
 	"os"
 )
@@ -21,6 +22,9 @@ var (
 )
 
 func init() {
+	if testmode.IsEnabled() {
+		println("Starting in test mode")
+	}
 	flag.BoolVar(&serverMode, "server", false, "run in server mode")
 	flag.IntVar(&port, "port", 8080, "port to listen on for server mode")
 	flag.StringVar(&bucket, "bucket", "", "bucket name to use in standalone mode")

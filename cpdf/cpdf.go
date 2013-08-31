@@ -3,6 +3,7 @@ package cpdf
 
 import (
 	"fmt"
+	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -14,6 +15,9 @@ var cpdf = cmdPath()
 // Merge combines the files located at the specified paths into a
 // single pdf with a custom header.
 func Merge(doclist []string, outfile, title string) (err error) {
+	if testmode.IsEnabled() {
+		return
+	}
 	err = execMerge(doclist, outfile)
 	if err != nil {
 		return
@@ -23,6 +27,9 @@ func Merge(doclist []string, outfile, title string) (err error) {
 }
 
 func PageCount(filePath string) (result int) {
+	if testmode.IsEnabled() {
+		return
+	}
 	cmd := exec.Command(cpdf, "-pages", filePath)
 	out, err := cmd.Output()
 	if err != nil {
@@ -32,7 +39,6 @@ func PageCount(filePath string) (result int) {
 	result, _ = strconv.Atoi(trimmed)
 	return
 }
-
 
 func execMerge(doclist []string, outfile string) (err error) {
 	cmd := exec.Command(cpdf)
