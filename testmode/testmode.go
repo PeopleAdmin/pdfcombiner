@@ -10,7 +10,7 @@ func IsEnabled() bool {
 	if !IsEnabledFast() {
 		return false
 	}
-	time.Sleep(1 * time.Second)
+	RandomDelay(8)
 	return true
 }
 
@@ -25,4 +25,12 @@ func RandomBoolean(falsePct float64) bool {
 		return false
 	}
 	return true
+}
+
+// Waits for up to maxWait seconds
+func RandomDelay(maxWait int64) {
+	rand.Seed(time.Now().UnixNano())
+	waitRange := maxWait * int64(time.Second)
+	waitTime := rand.Int63n(waitRange)
+	time.Sleep(time.Duration(waitTime))
 }
