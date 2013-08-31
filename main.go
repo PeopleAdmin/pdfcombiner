@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	if testmode.IsEnabled() {
+	if testmode.IsEnabledFast() {
 		println("Starting in test mode")
 	}
 	flag.BoolVar(&serverMode, "server", false, "run in server mode")

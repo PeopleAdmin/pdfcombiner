@@ -151,7 +151,8 @@ func (j *Job) Recipient() string {
 func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
 		Job:     *j,
-		Success: j.uploadComplete}
+		Success: j.isSuccessful(),
+	}
 	jsonResponse, _ = json.Marshal(response)
 	fmt.Printf("%s\n", jsonResponse)
 	return
@@ -169,6 +170,14 @@ func (j *Job) AddError(sourceFile string, newErr error) {
 		newErr = fmt.Errorf("bucket %s not accessible from this account", j.BucketName)
 	}
 	j.Errors[sourceFile] = newErr.Error()
+}
+
+// In test mode, randomly fail 10% of the time.
+func (j *Job) isSuccessful() bool {
+	if testmode.IsEnabledFast() {
+		return testmode.RandomBoolean(0.1)
+	}
+	return j.uploadComplete
 }
 
 // Initialize the fields which don't have usable zero-values.
