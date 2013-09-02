@@ -16,19 +16,23 @@ import (
 	"os"
 	"strings"
 	"time"
+	"sync/atomic"
 )
 
 var (
-	downloadTimeout = 3 * time.Minute
-	basedir         = "/tmp/"
-	maxGoroutines   = 30
+	downloadTimeout       = 3 * time.Minute
+	basedir               = "/tmp/"
+	maxJobs         int32 = 15
+	jobCounter      int32 = 0
 )
 
 // Combine is the entry point to this package.  Given a Job, downloads
 // all the files, combines them into a single one, uploads it to AWS
 // and posts the status to a callback endpoint.
 func Combine(j *job.Job) {
-	defer postToCallback(j)
+	defer cleanup(j)
+	throttle()
+	atomic.AddInt32(&jobCounter, 1)
 	startAll := time.Now()
 	saveDir := mkTmpDir()
 	getAllFiles(j, saveDir)
@@ -80,7 +84,6 @@ func getAllFiles(j *job.Job, dir string) {
 	c := make(chan s.Stat, j.DocCount())
 	e := make(chan s.Stat, j.DocCount())
 	for _, doc := range j.DocList {
-		throttle()
 		go getFile(j, doc.Name, dir, c, e)
 	}
 
@@ -89,9 +92,11 @@ func getAllFiles(j *job.Job, dir string) {
 }
 
 // Prevents the system from being overwhelmed with work.
-// Blocks until the number of Goroutines is less than a preset threshold.
+// Blocks until the number of active jobs is less than a preset threshold.
 func throttle() {
-	return
+	for atomic.LoadInt32(&jobCounter) >= maxJobs {
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 // Listen on several channels for information from background download
@@ -125,9 +130,10 @@ func printSummary(start time.Time, bytes int, count int) {
 
 // Send an update on the success or failure of the operation to the
 // callback URL provided by the job originator.
-func postToCallback(j *job.Job) {
+func cleanup(j *job.Job) {
 	log.Println("work complete, posting status to callback:", j.Callback)
 	notifier.SendNotification(j)
+	atomic.AddInt32(&jobCounter, -1)
 }
 
 // Make and return a randomized temporary directory.
