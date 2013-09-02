@@ -32,7 +32,6 @@ var (
 func Combine(j *job.Job) {
 	defer cleanup(j)
 	throttle()
-	atomic.AddInt32(&jobCounter, 1)
 	startAll := time.Now()
 	saveDir := mkTmpDir()
 	getAllFiles(j, saveDir)
@@ -52,6 +51,18 @@ func Combine(j *job.Job) {
 	j.PerfStats["upload"] = s.Stat{DlTime: time.Since(startUpload)}
 	j.PerfStats["total"] = s.Stat{DlTime: time.Since(startAll)}
 	return
+}
+
+func CurrentJobs() int32 {
+	return atomic.LoadInt32(&jobCounter)
+}
+
+func addJob() {
+	atomic.AddInt32(&jobCounter, 1)
+}
+
+func removeJob() {
+	atomic.AddInt32(&jobCounter, -1)
 }
 
 // Get an individual file from S3.  If successful, writes the file out to disk
@@ -94,7 +105,7 @@ func getAllFiles(j *job.Job, dir string) {
 // Prevents the system from being overwhelmed with work.
 // Blocks until the number of active jobs is less than a preset threshold.
 func throttle() {
-	for atomic.LoadInt32(&jobCounter) >= maxJobs {
+	for CurrentJobs() >= maxJobs {
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -133,7 +144,7 @@ func printSummary(start time.Time, bytes int, count int) {
 func cleanup(j *job.Job) {
 	log.Println("work complete, posting status to callback:", j.Callback)
 	notifier.SendNotification(j)
-	atomic.AddInt32(&jobCounter, -1)
+	removeJob()
 }
 
 // Make and return a randomized temporary directory.
