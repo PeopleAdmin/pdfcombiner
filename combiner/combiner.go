@@ -24,6 +24,7 @@ var (
 	basedir               = "/tmp/"
 	maxJobs         int32 = 15
 	jobCounter      int32 = 0
+	waitingCounter  int32 = 0
 )
 
 // Combine is the entry point to this package.  Given a Job, downloads
@@ -31,8 +32,8 @@ var (
 // and posts the status to a callback endpoint.
 func Combine(j *job.Job) {
 	defer cleanup(j)
-	throttle()
 	startAll := time.Now()
+	throttle()
 	saveDir := mkTmpDir()
 	getAllFiles(j, saveDir)
 	if !j.HasDownloadedDocs() {
@@ -57,7 +58,16 @@ func CurrentJobs() int32 {
 	return atomic.LoadInt32(&jobCounter)
 }
 
+func CurrentWait() int32 {
+	return atomic.LoadInt32(&waitingCounter)
+}
+
+func addWaiter() {
+	atomic.AddInt32(&waitingCounter, 1)
+}
+
 func addJob() {
+	atomic.AddInt32(&waitingCounter, -1)
 	atomic.AddInt32(&jobCounter, 1)
 }
 
@@ -105,9 +115,11 @@ func getAllFiles(j *job.Job, dir string) {
 // Prevents the system from being overwhelmed with work.
 // Blocks until the number of active jobs is less than a preset threshold.
 func throttle() {
+	addWaiter()
 	for CurrentJobs() >= maxJobs {
 		time.Sleep(100 * time.Millisecond)
 	}
+	addJob()
 }
 
 // Listen on several channels for information from background download

@@ -4,6 +4,7 @@
 package server
 
 import (
+	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/combiner"
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"log"
@@ -14,7 +15,6 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
-	"fmt"
 )
 
 // A CombinerServer needs a port to listen on and a WaitGroup to keep
@@ -54,7 +54,7 @@ func (c CombinerServer) Listen(listenPort int) {
 func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	j, err := job.NewFromJSON(r.Body)
-	logJobReceipt(r,j)
+	logJobReceipt(r, j)
 	if err != nil || !j.IsValid() {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(invalidMessage)
@@ -71,7 +71,17 @@ func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 // Ping is no-op handler for responding to things like health checks.
 // It responds 200 OK with no content to all requests.
 func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {
-  log.Println(requestInfo(r))
+	log.Println(requestInfo(r))
+}
+
+func (c CombinerServer) Status(w http.ResponseWriter, r *http.Request) {
+	log.Println(requestInfo(r))
+	w.Header().Set("Content-Type", "application/json")
+	template := `{"host": "%s", "running": %d, "waiting": %d}`
+	host,_ := os.Hostname()
+	jobs := fmt.Sprintf(template+"\n",
+		host, combiner.CurrentJobs(), combiner.CurrentWait())
+	w.Write([]byte(jobs))
 }
 
 func logJobReceipt(r *http.Request, j *job.Job) {
@@ -79,7 +89,7 @@ func logJobReceipt(r *http.Request, j *job.Job) {
 }
 
 func requestInfo(r *http.Request) string {
-  return fmt.Sprintf("%v %v from %v", r.Method, r.URL, r.RemoteAddr)
+	return fmt.Sprintf("%v %v from %v", r.Method, r.URL, r.RemoteAddr)
 }
 
 // http.ListenAndServe needs a string for the port.
@@ -99,6 +109,7 @@ func (c CombinerServer) unregisterWorker() {
 
 func (c CombinerServer) registerHandlers(listener net.Listener) {
 	http.HandleFunc("/health_check", c.Ping)
+	http.HandleFunc("/status", c.Status)
 	http.HandleFunc("/", c.ProcessJob)
 	handleSignals(listener)
 }
