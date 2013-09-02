@@ -10,7 +10,7 @@ func IsEnabled() bool {
 	if !IsEnabledFast() {
 		return false
 	}
-	RandomDelay(8)
+	RandomDelay(3)
 	return true
 }
 
