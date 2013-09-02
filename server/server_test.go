@@ -30,7 +30,7 @@ func TestRejectsInvalidRequest(t *testing.T) {
 	req, _ := http.NewRequest("POST", "http://example.com/", postBody)
 	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 400, recorder.Code)
-	assert.Equal(t, recorder.Body.String(), string(invalidMessage)+"\n")
+	assert.Equal(t, recorder.Body.String(), string(invalidMessage))
 }
 
 func TestRejectsIncompleteRequest(t *testing.T) {
@@ -39,7 +39,7 @@ func TestRejectsIncompleteRequest(t *testing.T) {
 	req, _ := http.NewRequest("POST", "http://example.com/", postBody)
 	handler.ProcessJob(recorder, req)
 	assert.Equal(t, 400, recorder.Code)
-	assert.Equal(t, recorder.Body.String(), string(invalidMessage)+"\n")
+	assert.Equal(t, recorder.Body.String(), string(invalidMessage))
 }
 
 func TestAcceptsValidRequest(t *testing.T) {
