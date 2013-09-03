@@ -31,6 +31,7 @@ type NetLoggable interface {
 
 var invalidMessage = []byte("{\"response\":\"invalid params\"}\n")
 var okMessage = []byte("{\"response\":\"ok\"}\n")
+var host, _ = os.Hostname()
 
 // Listen starts a HTTP server listening on `Port` to respond to
 // JSON-formatted combination requests.
@@ -77,9 +78,8 @@ func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {
 func (c CombinerServer) Status(w http.ResponseWriter, r *http.Request) {
 	log.Println(requestInfo(r))
 	w.Header().Set("Content-Type", "application/json")
-	template := `{"host": "%s", "running": %d, "waiting": %d}`
-	host,_ := os.Hostname()
-	jobs := fmt.Sprintf(template+"\n",
+	template := `{"host": "%s", "running": %d, "waiting": %d}`+"\n"
+	jobs := fmt.Sprintf(template,
 		host, combiner.CurrentJobs(), combiner.CurrentWait())
 	w.Write([]byte(jobs))
 }
