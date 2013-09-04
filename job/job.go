@@ -38,7 +38,7 @@ type Job struct {
 // A Document has a (file) name and a human readable title, possibly
 // used for watermarking prior to combination.
 type Document struct {
-	Name  string `json:"name,omitempty"`
+	Key   string `json:"key,omitempty"`
 	Title string `json:"title"`
 	Data  string `json:"data,omitempty"`
 }
@@ -54,7 +54,7 @@ type JobResponse struct {
 func docsFromStrings(names []string) (docs []Document) {
 	docs = make([]Document, len(names))
 	for i, name := range names {
-		docs[i] = Document{Name: name}
+		docs[i] = Document{Key: name}
 	}
 	return
 }
@@ -101,7 +101,7 @@ func (j *Job) Get(doc Document) (docContent []byte, err error) {
 		return
 	}
 	if doc.Data == "" {
-		docContent, err = j.bucket.Get(j.s3Path(doc.Name))
+		docContent, err = j.bucket.Get(j.s3Path(doc.Key))
 	} else {
 		docContent, err = decodeEmbeddedData(doc.Data)
 	}

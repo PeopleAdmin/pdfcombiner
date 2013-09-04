@@ -82,17 +82,17 @@ func getFile(j *job.Job, doc job.Document, dir string, c chan<- s.Stat, e chan<-
 	start := time.Now()
 	data, err := j.Get(doc)
 	if err != nil {
-		e <- s.Stat{Filename: doc.Name, Err: err}
+		e <- s.Stat{Filename: doc.Key, Err: err}
 		return
 	}
-	path := localPath(dir, doc.Name)
+	path := localPath(dir, doc.Key)
 	err = ioutil.WriteFile(path, data, 0644)
 	if err != nil {
-		e <- s.Stat{Filename: doc.Name, Err: err}
+		e <- s.Stat{Filename: doc.Key, Err: err}
 		return
 	}
 	pagecount := cpdf.PageCount(path)
-	c <- s.Stat{Filename: doc.Name,
+	c <- s.Stat{Filename: doc.Key,
 		Size:      len(data),
 		PageCount: pagecount,
 		DlTime:    time.Since(start)}

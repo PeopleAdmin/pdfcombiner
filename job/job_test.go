@@ -18,7 +18,7 @@ func TestValidation(t *testing.T) {
 		DocList:    make([]Document, 0),
 	}
 	assert.False(t, newJob.IsValid(), "Job should not validate with an empty doclist")
-	newJob.DocList = append(newJob.DocList, Document{Name: "doc.pdf"})
+	newJob.DocList = append(newJob.DocList, Document{Key: "doc.pdf"})
 	assert.False(t, newJob.IsValid(), "Job should not validate with a missing upload key")
 	newJob.CombinedKey = "out.pdf"
 	assert.True(t, newJob.IsValid(), "Job should validate when inputs are valid")
