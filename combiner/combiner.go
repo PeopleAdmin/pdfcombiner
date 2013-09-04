@@ -78,21 +78,21 @@ func removeJob() {
 // Get an individual file from S3.  If successful, writes the file out to disk
 // and sends a stat object back to the main channel.  If there are errors they
 // are sent back through the error channel.
-func getFile(j *job.Job, docname string, dir string, c chan<- s.Stat, e chan<- s.Stat) {
+func getFile(j *job.Job, doc job.Document, dir string, c chan<- s.Stat, e chan<- s.Stat) {
 	start := time.Now()
-	data, err := j.Get(docname)
+	data, err := j.Get(doc)
 	if err != nil {
-		e <- s.Stat{Filename: docname, Err: err}
+		e <- s.Stat{Filename: doc.Name, Err: err}
 		return
 	}
-	path := localPath(dir, docname)
+	path := localPath(dir, doc.Name)
 	err = ioutil.WriteFile(path, data, 0644)
 	if err != nil {
-		e <- s.Stat{Filename: docname, Err: err}
+		e <- s.Stat{Filename: doc.Name, Err: err}
 		return
 	}
 	pagecount := cpdf.PageCount(path)
-	c <- s.Stat{Filename: docname,
+	c <- s.Stat{Filename: doc.Name,
 		Size:      len(data),
 		PageCount: pagecount,
 		DlTime:    time.Since(start)}
@@ -105,7 +105,7 @@ func getAllFiles(j *job.Job, dir string) {
 	c := make(chan s.Stat, j.DocCount())
 	e := make(chan s.Stat, j.DocCount())
 	for _, doc := range j.DocList {
-		go getFile(j, doc.Name, dir, c, e)
+		go getFile(j, doc, dir, c, e)
 	}
 
 	totalBytes := waitForDownloads(j, c, e)

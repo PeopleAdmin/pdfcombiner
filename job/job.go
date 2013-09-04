@@ -38,8 +38,9 @@ type Job struct {
 // A Document has a (file) name and a human readable title, possibly
 // used for watermarking prior to combination.
 type Document struct {
-	Name  string `json:"name"`
+	Name  string `json:"name,omitempty"`
 	Title string `json:"title"`
+	Data  string `json:"data,omitempty"`
 }
 
 // A JobResponse is sent as a notification.  It includes the success
@@ -90,13 +91,19 @@ func (j *Job) IsValid() bool {
 	return (j.BucketName != "") &&
 		(j.CombinedKey != "") &&
 		(j.Callback != "") &&
-		(j.DocCount() > 0)
+		(j.DocCount() > 0) // need to check validity of docs
 }
 
-// Get retrieves the requested document from S3 as a byte slice.
-func (j *Job) Get(docname string) (data []byte, err error) {
-	if !testmode.IsEnabled() {
-		data, err = j.bucket.Get(j.s3Path(docname))
+// Get retrieves the requested document from S3 as a byte slice or
+// decodes it from the embedded `data` attribute of the Document.
+func (j *Job) Get(doc Document) (docContent []byte, err error) {
+	if testmode.IsEnabled() {
+		return
+	}
+	if doc.Data == "" {
+		docContent, err = j.bucket.Get(j.s3Path(doc.Name))
+	} else {
+		docContent, err = decodeEmbeddedData(doc.Data)
 	}
 	return
 }
@@ -204,3 +211,4 @@ func (j *Job) connect() (err error) {
 func (j *Job) s3Path(docname string) string {
 	return docname
 }
+
