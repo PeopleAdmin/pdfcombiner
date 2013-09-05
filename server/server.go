@@ -25,10 +25,6 @@ type CombinerServer struct {
 	pending *sync.WaitGroup
 }
 
-type NetLoggable interface {
-	Message(*http.Request) string
-}
-
 var invalidMessage = []byte("{\"response\":\"invalid params\"}\n")
 var okMessage = []byte("{\"response\":\"ok\"}\n")
 var host, _ = os.Hostname()
