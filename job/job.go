@@ -43,11 +43,13 @@ type Document struct {
 	Data  string `json:"data,omitempty"`
 }
 
-// A JobResponse is sent as a notification.  It includes the success
-// status and a copy of the original job.
+// A JobResponse is sent as a notification -- it includes the success
+// status as well as a subset of the job fields.
 type JobResponse struct {
-	Success bool `json:"success"`
-	Job     Job  `json:"job"`
+	Success   bool                 `json:"success"`
+	Errors    map[string]string    `json:"errors"`
+	Callback  string               `json:"callback"`
+	PerfStats map[string]stat.Stat `json:"perf_stats"`
 }
 
 // Given a slice of document names, return a slice of Documents.
@@ -157,11 +159,12 @@ func (j *Job) Recipient() string {
 // ToJSON serializes the Job into a JSON byte slice.
 func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
-		Job:     *j,
-		Success: j.isSuccessful(),
+		Success:   j.isSuccessful(),
+		Errors:    j.Errors,
+		Callback:  j.Callback,
+		PerfStats: j.PerfStats,
 	}
 	jsonResponse, _ = json.Marshal(response)
-	fmt.Printf("%s\n", jsonResponse)
 	return
 }
 
@@ -211,4 +214,3 @@ func (j *Job) connect() (err error) {
 func (j *Job) s3Path(docname string) string {
 	return docname
 }
-
