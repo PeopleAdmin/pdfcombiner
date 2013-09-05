@@ -1,17 +1,17 @@
 package job
 
-import(
-	"io/ioutil"
-	"io"
-	"strings"
-	"encoding/base64"
+import (
 	"compress/zlib"
+	"encoding/base64"
+	"io"
+	"io/ioutil"
+	"strings"
 )
 
 // decodeEmbeddedData takes a base64-encoded string of a gzipped document
 // and returns the original source pdf as a byte slice.
 func decodeEmbeddedData(encoded string) (decoded []byte, err error) {
-	pipeline, err := zlib.NewReader( decoder(encoded) )
+	pipeline, err := zlib.NewReader(decoder(encoded))
 	defer pipeline.Close()
 	if err == nil {
 		decoded, err = ioutil.ReadAll(pipeline)
