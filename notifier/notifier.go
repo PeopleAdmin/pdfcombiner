@@ -3,9 +3,9 @@
 package notifier
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
-	"fmt"
 	"net/http"
 )
 
@@ -22,11 +22,11 @@ func SendNotification(n Notifiable) (response *http.Response, err error) {
 	payload := n.Content()
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", destination, payload)
-	req.SetBasicAuth("admin","password")
-	req.Header.Set("Content-Type","application/json")
+	req.SetBasicAuth("admin", "password")
+	req.Header.Set("Content-Type", "application/json")
 	response, err = client.Do(req)
 	if err != nil {
-		fmt.Println("Error posting notification:",err)
+		fmt.Println("Error posting notification:", err)
 		return
 	}
 	body, err := ioutil.ReadAll(response.Body)
