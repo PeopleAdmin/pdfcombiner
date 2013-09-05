@@ -5,27 +5,16 @@ package combiner
 
 import (
 	"errors"
-	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/cpdf"
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"github.com/PeopleAdmin/pdfcombiner/notifier"
 	s "github.com/PeopleAdmin/pdfcombiner/stat"
 	"io/ioutil"
 	"log"
-	"math/rand"
-	"os"
-	"strings"
 	"time"
-	"sync/atomic"
 )
 
-var (
-	downloadTimeout       = 3 * time.Minute
-	basedir               = "/tmp/"
-	maxJobs         int32 = 15
-	jobCounter      int32 = 0
-	waitingCounter  int32 = 0
-)
+var downloadTimeout = 3 * time.Minute
 
 // Combine is the entry point to this package.  Given a Job, downloads
 // all the files, combines them into a single one, uploads it to AWS
@@ -52,27 +41,6 @@ func Combine(j *job.Job) {
 	j.PerfStats["upload"] = s.Stat{DlTime: time.Since(startUpload)}
 	j.PerfStats["total"] = s.Stat{DlTime: time.Since(startAll)}
 	return
-}
-
-func CurrentJobs() int32 {
-	return atomic.LoadInt32(&jobCounter)
-}
-
-func CurrentWait() int32 {
-	return atomic.LoadInt32(&waitingCounter)
-}
-
-func addWaiter() {
-	atomic.AddInt32(&waitingCounter, 1)
-}
-
-func addJob() {
-	atomic.AddInt32(&waitingCounter, -1)
-	atomic.AddInt32(&jobCounter, 1)
-}
-
-func removeJob() {
-	atomic.AddInt32(&jobCounter, -1)
 }
 
 // Get an individual file from S3.  If successful, writes the file out to disk
@@ -112,16 +80,6 @@ func getAllFiles(j *job.Job, dir string) {
 	printSummary(start, totalBytes, j.CompleteCount())
 }
 
-// Prevents the system from being overwhelmed with work.
-// Blocks until the number of active jobs is less than a preset threshold.
-func throttle() {
-	addWaiter()
-	for CurrentJobs() >= maxJobs {
-		time.Sleep(100 * time.Millisecond)
-	}
-	addJob()
-}
-
 // Listen on several channels for information from background download
 // tasks -- each task will either send a s.Stat through c, an error through
 // e, or timeout.  Once all docs are accounted for, return the total number
@@ -157,27 +115,4 @@ func cleanup(j *job.Job) {
 	log.Println("work complete, posting status to callback:", j.Callback)
 	notifier.SendNotification(j)
 	removeJob()
-}
-
-// Make and return a randomized temporary directory.
-func mkTmpDir() (dirname string) {
-	rand.Seed(time.Now().UnixNano())
-	dirname = fmt.Sprintf("/tmp/pdfcombiner/%d/", rand.Int())
-	os.MkdirAll(dirname, 0777)
-	return
-}
-
-// Get the absolute paths to a list of docs.
-func fsPathsOf(docs []string, dir string) (paths []string) {
-	paths = make([]string, len(docs))
-	for idx, doc := range docs {
-		paths[idx] = localPath(dir, doc)
-	}
-	return
-}
-
-// localPath replaces any s3 key directory markers with underscores so
-// we don't need to recursively create directories when saving files.
-func localPath(dir, remotePath string) string {
-	return dir + strings.Replace(remotePath, "/", "_", -1)
 }
