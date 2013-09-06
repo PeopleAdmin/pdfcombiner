@@ -7,9 +7,10 @@ import (
 	"testing"
 )
 
-var validJSON = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090","combined_key":"out.pdf"}`
+var ValidJSON = `{"bucket_name":"asd","doc_list":[{"key":"100001.pdf"}], "callback":"http://localhost:9090","combined_key":"out.pdf"}`
+var LegacyJSON = `{"bucket_name":"asd","doc_list":[{"name":"100001.pdf"}], "callback":"http://localhost:9090","combined_key":"out.pdf"}`
 
-func TestValidation(t *testing.T) {
+func TestJobValidation(t *testing.T) {
 	invalidJob := &Job{}
 	assert.False(t, invalidJob.IsValid(), "Job should not validate when inputs are invalid")
 	newJob := &Job{
@@ -24,14 +25,15 @@ func TestValidation(t *testing.T) {
 	assert.True(t, newJob.IsValid(), "Job should validate when inputs are valid")
 }
 
-func TestJSONDeserialization(t *testing.T) {
+func TestJobJSONDeserialization(t *testing.T) {
 	var cases = []struct {
 		in       string
 		validity bool
 	}{
 		{"{", false},
 		{"{}", false},
-		{validJSON, true},
+		{LegacyJSON, false},
+		{ValidJSON, true},
 	}
 	for _, c := range cases {
 		newJob, err := newFromString(c.in)
@@ -40,8 +42,8 @@ func TestJSONDeserialization(t *testing.T) {
 	}
 }
 
-func TestCompletion(t *testing.T) {
-	j, _ := newFromString(validJSON)
+func TestJobCompletion(t *testing.T) {
+	j, _ := newFromString(ValidJSON)
 	assert.Equal(t, j.CompleteCount(), 0, "New jobs have no complete docs")
 	assert.False(t, j.HasDownloadedDocs(), "HasDownloadedDocs() is false when appropriate")
 	j.MarkComplete("100001.pdf", stat.Stat{})

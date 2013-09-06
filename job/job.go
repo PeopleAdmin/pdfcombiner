@@ -45,7 +45,19 @@ func (j *Job) IsValid() bool {
 	return (j.BucketName != "") &&
 		(j.CombinedKey != "") &&
 		(j.Callback != "") &&
-		(j.DocCount() > 0) // need to check validity of docs
+		j.DocsAreValid()
+}
+
+func (j *Job) DocsAreValid() bool {
+	if j.DocCount() <= 0 {
+		return false
+	}
+	for _, doc := range j.DocList {
+		if !doc.isValid() {
+			return false
+		}
+	}
+	return true
 }
 
 // DocCount returns the number of documents requested.

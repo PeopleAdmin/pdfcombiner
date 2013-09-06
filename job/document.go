@@ -7,9 +7,13 @@ import (
 // A Document has a (file) name and a human readable title, possibly
 // used for watermarking prior to combination.
 type Document struct {
-	Key   string `json:"key,omitempty"`
+	Key   string `json:"key"`
 	Title string `json:"title"`
 	Data  string `json:"data,omitempty"`
+}
+
+func (doc *Document) isValid() bool {
+	return doc.Key != ""
 }
 
 // Given a slice of document names, return a slice of Documents.
