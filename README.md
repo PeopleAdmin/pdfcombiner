@@ -11,10 +11,18 @@ look like:
 {
   "bucket_name": "somebucket",
   "doc_list": [
-    "realfile.pdf",
-    "nonexistent_file"
+    {
+      "key": "s3/path/to/file.pdf",
+      "title": "name of pdf"
+    },
+    {
+      "key": "s3/path/to/other/file.pdf",
+      "name": "name of pdf"
+    }
   ],
-  "callback": "http://mycallbackurl.com/combination_result/12345"
+  "callback": "http://mycallbackurl.com/combination_result/12345",
+  "combined_key": "path/to/upload/combined/file.pdf",
+  "title": "Combined Doc for Some Applicant"
 }
 ```
 
@@ -34,25 +42,21 @@ with a JSON body similar to:
 ```json
 {
   "success": true,
-  "combined_file": "path/to/combined/file.pdf",
-  "job": {
-    "bucket_name": "somebucket",
-    "doc_list": [
-      "realfile.pdf",
-      "nonexistent_file"
-    ],
-    "downloaded": [
-      "realfile.pdf"
-    ],
-    "callback": "http://mycallbackurl.com/combination_result/12345",
-    "errors": {
-      "nonexistent_file": "The specified key does not exist."
-    },
-    "perf_stats": {
-      "realfile.pdf": {
-        "Filename": "realfile.pdf",
-        "Size": 1292244,
-        "DlTime": 1229882563
+  "errors": {},
+  "callback": "http://mycallbackurl.com/combination_result/12345",
+  "perf_stats": {
+      "606/docs/1068.pdf": {
+      "s3/path/to/file.pdf": {
+          "Filename": "s3/path/to/file.pdf",
+          "Size": 1234,
+          "PageCount": 5,
+          "DlTime": 622469262
+      },
+      "s3/path/to/other/file.pdf": {
+          "Filename": "s3/path/to/other/file.pdf",
+          "Size": 3456,
+          "PageCount": 3,
+          "DlTime": 622469262
       }
     }
   }
@@ -60,8 +64,6 @@ with a JSON body similar to:
 ```
 
 `"success"` is true if at least one file downloaded successfully.
-`"combined_file"` may be `null` if `success` is false.
-
 
 You can also combine files in standalone mode from the command line.
 Use `./pdfcombiner -help` to get a list of options.
