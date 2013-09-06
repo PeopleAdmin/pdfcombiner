@@ -23,6 +23,7 @@ var (
 
 func init() {
 	if testmode.IsEnabledFast() {
+		testmode.SetupSignals()
 		println("Starting in test mode")
 	}
 	flag.BoolVar(&serverMode, "server", false, "run in server mode")
