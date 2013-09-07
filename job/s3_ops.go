@@ -29,12 +29,17 @@ func (j *Job) Get(doc Document) (docContent []byte, err error) {
 	if testmode.IsEnabled() {
 		return
 	}
-	if doc.Data == "" {
-		docContent, err = j.bucket.Get(j.s3Path(doc.Key))
-	} else {
-		docContent, err = decodeEmbeddedData(doc.Data)
+	switch doc.Data {
+	case "":
+		return j.download(doc)
+	default:
+		return decodeEmbeddedData(doc.Data)
 	}
-	return
+}
+
+func (j *Job) download(doc Document) (content []byte, err error) {
+	remotePath := j.s3Path(doc.Key)
+	return j.bucket.Get(remotePath)
 }
 
 // UploadCombinedFile sends a file to the job's CombinedKey on S3.
