@@ -12,13 +12,19 @@ import (
 //    fetched from the enclosing job's bucket.
 //  - If the Data field is nonempty, it must contain a zlib-compressed
 //    and Base64-encoded string containing the PDF.
+// The bookmarks field is filled in by processing and is not serialized.
 type Document struct {
-	Key   string `json:"key"`
-	Title string `json:"title"`
-	Data  string `json:"data,omitempty"`
+	Key       string `json:"key"`
+	Title     string `json:"title"`
+	Data      string `json:"data,omitempty"`
+	bookmarks []Bookmark
 }
 
-// The Key is the only required field
+type Bookmark struct {
+	Name string
+	Page int
+}
+
 func (doc *Document) isValid() bool {
 	return doc.Key != ""
 }
