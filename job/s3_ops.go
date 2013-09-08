@@ -18,8 +18,8 @@ func (j *Job) connect() (err error) {
 	return
 }
 
-// Get retrieves the requested document from S3 as a byte slice or
-// decodes it from the embedded `data` attribute of the Document.
+// Get retrieves the requested document, either from S3 or by decoding the
+// embedded `Data` attribute of the Document.
 func (j *Job) Get(doc Document) (docContent []byte, err error) {
 	if testmode.IsEnabled() {
 		return
