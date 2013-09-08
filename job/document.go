@@ -51,3 +51,8 @@ func (j *Job) MarkComplete(newdoc string, info stat.Stat) {
 func (j *Job) HasDownloadedDocs() bool {
 	return len(j.Downloaded) > 0
 }
+
+func (doc *Document) s3Path() string {
+	return doc.Key
+}
+

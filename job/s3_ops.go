@@ -18,11 +18,6 @@ func (j *Job) connect() (err error) {
 	return
 }
 
-// Construct an absolute path within a bucket to a given document.
-func (j *Job) s3Path(docname string) string {
-	return docname
-}
-
 // Get retrieves the requested document from S3 as a byte slice or
 // decodes it from the embedded `data` attribute of the Document.
 func (j *Job) Get(doc Document) (docContent []byte, err error) {
@@ -38,7 +33,7 @@ func (j *Job) Get(doc Document) (docContent []byte, err error) {
 }
 
 func (j *Job) download(doc Document) (content []byte, err error) {
-	remotePath := j.s3Path(doc.Key)
+	remotePath := doc.s3Path()
 	return j.bucket.Get(remotePath)
 }
 
