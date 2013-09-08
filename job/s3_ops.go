@@ -7,6 +7,11 @@ import (
 	"launchpad.net/goamz/s3"
 )
 
+var (
+	awsRegion              = aws.USEast
+	uploadedFilePermission = s3.Private
+)
+
 // Get retrieves the requested document, either from S3 or by decoding the
 // embedded `Data` attribute of the Document.
 func (j *Job) Get(doc Document) (docContent []byte, err error) {
@@ -31,7 +36,7 @@ func (j *Job) UploadCombinedFile(localPath string) (err error) {
 		j.AddError(j.CombinedKey, err)
 		return
 	}
-	err = j.bucket.Put(j.CombinedKey, content, "application/pdf", s3.Private)
+	err = j.bucket.Put(j.CombinedKey, content, "application/pdf", uploadedFilePermission)
 	if err != nil {
 		j.AddError(j.CombinedKey, err)
 	}
@@ -45,7 +50,7 @@ func (j *Job) connect() (err error) {
 	if err != nil {
 		return
 	}
-	s := s3.New(auth, aws.USEast)
+	s := s3.New(auth, awsRegion)
 	j.bucket = s.Bucket(j.BucketName)
 	return
 }
@@ -54,4 +59,3 @@ func (j *Job) download(doc Document) (content []byte, err error) {
 	remotePath := doc.s3Path()
 	return j.bucket.Get(remotePath)
 }
-
