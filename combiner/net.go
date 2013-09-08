@@ -26,7 +26,7 @@ func getFile(j *job.Job, doc job.Document, dir string, c chan<- Stat, e chan<- S
 		e <- Stat{Filename: doc.Key, Err: err}
 		return
 	}
-	pagecount := cpdf.PageCount(path)
+	pagecount, _ := cpdf.New(path).PageCount()
 	c <- Stat{Filename: doc.Key,
 		Size:      len(data),
 		PageCount: pagecount,

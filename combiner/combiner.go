@@ -28,7 +28,8 @@ func Combine(j *job.Job) {
 
 	componentPaths := fsPathsOf(j.Downloaded, saveDir)
 	combinedPath := saveDir + "combined.pdf"
-	err := cpdf.Merge(componentPaths, combinedPath, j.Title)
+	merger := cpdf.New(combinedPath)
+	err := merger.Merge(componentPaths, j.Title)
 	if err != nil {
 		j.AddError("general", err)
 		return
