@@ -12,12 +12,11 @@ import (
 // Panic at import time if cpdf not found.
 var cpdfbin = cpdfPath()
 
-type PdfInfoCmd interface {
-	PageCount() (int, error)
-	ListBookmarks() string
+type InfoCmd interface {
+	ListBookmarks() ([]byte, error)
 }
 
-type PdfManipulatorCmd interface {
+type ManipulatorCmd interface {
 	Merge([]string, string) error
 	AddBookmarks(string)
 }
@@ -31,6 +30,11 @@ func New(filePath string) (c *Cpdf) {
 	c = &Cpdf{File: filePath}
 	c.command = exec.Command(cpdfbin)
 	return
+}
+
+func (c *Cpdf) ListBookmarks() (out []byte, err error) {
+	c.addArgs("-list-bookmarks", c.File)
+	return c.run()
 }
 
 // Merge concatenates the given files and adds a header in one pass.

@@ -20,11 +20,6 @@ type Document struct {
 	bookmarks []Bookmark
 }
 
-type Bookmark struct {
-	Name string
-	Page int
-}
-
 func (doc *Document) isValid() bool {
 	return doc.Key != ""
 }
@@ -55,4 +50,3 @@ func (j *Job) HasDownloadedDocs() bool {
 func (doc *Document) s3Path() string {
 	return doc.Key
 }
-
