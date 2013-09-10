@@ -2,6 +2,7 @@ package combiner
 
 import (
 	"fmt"
+	"github.com/PeopleAdmin/pdfcombiner/job"
 	"math/rand"
 	"os"
 	"strings"
@@ -19,7 +20,7 @@ func mkTmpDir() (dirname string) {
 }
 
 // Get the absolute paths to a list of docs.
-func fsPathsOf(docs []string, dir string) (paths []string) {
+func fsPathsOf(docs []*job.Document, dir string) (paths []string) {
 	paths = make([]string, len(docs))
 	for idx, doc := range docs {
 		paths[idx] = localPath(dir, doc)
@@ -29,6 +30,6 @@ func fsPathsOf(docs []string, dir string) (paths []string) {
 
 // localPath replaces any s3 key directory markers with underscores so
 // we don't need to recursively create directories when saving files.
-func localPath(dir, remotePath string) string {
-	return dir + strings.Replace(remotePath, "/", "_", -1)
+func localPath(dir string, doc *job.Document) string {
+	return dir + strings.Replace(doc.Key, "/", "_", -1)
 }

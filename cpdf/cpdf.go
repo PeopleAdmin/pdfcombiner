@@ -14,6 +14,7 @@ var cpdfbin = cpdfPath()
 
 type InfoCmd interface {
 	ListBookmarks() ([]byte, error)
+	PageCount() (int, error)
 }
 
 type ManipulatorCmd interface {

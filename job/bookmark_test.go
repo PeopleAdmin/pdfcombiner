@@ -23,6 +23,10 @@ type validOutputter struct{}
 type invalidOutputter struct{}
 type erroringOutputter struct{}
 
+func (o *invalidOutputter) PageCount() (int, error)  { return 0, nil }
+func (o *validOutputter) PageCount() (int, error)    { return 0, nil }
+func (o *erroringOutputter) PageCount() (int, error) { return 0, nil }
+
 func (o *validOutputter) ListBookmarks() (out []byte, err error) {
 	out = []byte(validCpdfOutput)
 	return

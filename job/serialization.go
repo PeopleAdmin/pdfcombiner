@@ -4,17 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/PeopleAdmin/pdfcombiner/stat"
 	"io"
 )
 
 // A JobResponse is sent as a notification -- it includes the success
 // status as well as a subset of the job fields.
 type JobResponse struct {
-	Success   bool                 `json:"success"`
-	Errors    map[string]string    `json:"errors"`
-	Callback  string               `json:"callback"`
-	PerfStats map[string]stat.Stat `json:"perf_stats"`
+	Success  bool    `json:"success"`
+	Errors   []error `json:"errors"`
+	Callback string  `json:"callback"`
 }
 
 // NewFromJSON constructs a Job from an io.Reader containing JSON
@@ -36,10 +34,9 @@ func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
 // ToJSON serializes the Job into a JSON byte slice.
 func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
-		Success:   j.isSuccessful(),
-		Errors:    j.Errors,
-		Callback:  j.Callback,
-		PerfStats: j.PerfStats,
+		Success:  j.isSuccessful(),
+		Errors:   j.Errors,
+		Callback: j.Callback,
 	}
 	jsonResponse, _ = json.Marshal(response)
 	return

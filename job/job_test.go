@@ -1,7 +1,6 @@
 package job
 
 import (
-	"github.com/PeopleAdmin/pdfcombiner/stat"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -52,7 +51,7 @@ func TestJobCompletion(t *testing.T) {
 	j, _ := newFromString(ValidJSON)
 	assert.Equal(t, j.CompleteCount(), 0, "New jobs have no complete docs")
 	assert.False(t, j.HasDownloadedDocs(), "HasDownloadedDocs() is false when appropriate")
-	j.MarkComplete("100001.pdf", stat.Stat{})
+	j.MarkComplete(&j.DocList[0])
 	assert.Equal(t, j.CompleteCount(), 1, "Complete count is accurate")
 	assert.True(t, j.HasDownloadedDocs(), "HasDownloadedDocs() is true when appropriate")
 }

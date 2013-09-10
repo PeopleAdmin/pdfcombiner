@@ -17,6 +17,12 @@ type Bookmark struct {
 	Page  int
 }
 
+// TODO how do we handle errors here?
+func (doc *Document) GetMetadata(cmd cpdf.InfoCmd) {
+	doc.PageCount, _ = cmd.PageCount()
+	doc.bookmarks, _ = ExtractBookmarks(cmd)
+}
+
 func (b *Bookmark) String() string {
 	return fmt.Sprintf("%d %s %d", b.Depth, strconv.Quote(b.Name), b.Page)
 }

@@ -3,10 +3,10 @@
 package combiner
 
 import (
+	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/cpdf"
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"github.com/PeopleAdmin/pdfcombiner/notifier"
-	. "github.com/PeopleAdmin/pdfcombiner/stat"
 	"log"
 	"time"
 )
@@ -18,7 +18,6 @@ var downloadTimeout = 3 * time.Minute
 // and posts the status to a callback endpoint.
 func Combine(j *job.Job) {
 	defer cleanup(j)
-	startAll := time.Now()
 	throttle()
 	saveDir := mkTmpDir()
 	getAllFiles(j, saveDir)
@@ -31,22 +30,11 @@ func Combine(j *job.Job) {
 	merger := cpdf.New(combinedPath)
 	err := merger.Merge(componentPaths, j.Title)
 	if err != nil {
-		j.AddError("general", err)
+		j.AddError(fmt.Errorf("while combining file: %v", err))
 		return
 	}
-	startUpload := time.Now()
 	j.UploadCombinedFile(combinedPath)
-	j.PerfStats["upload"] = Stat{DlTime: time.Since(startUpload)}
-	j.PerfStats["total"] = Stat{DlTime: time.Since(startAll)}
 	return
-}
-
-// Print a summary of the download activity.
-func printSummary(start time.Time, bytes int, count int) {
-	seconds := time.Since(start).Seconds()
-	mbps := float64(bytes) / 1024 / 1024 / seconds
-	log.Printf("got %d bytes over %d files in %f secs (%f MB/s)\n",
-		bytes, count, seconds, mbps)
 }
 
 // Send an update on the success or failure of the operation to the

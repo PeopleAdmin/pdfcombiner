@@ -6,7 +6,6 @@ package job
 
 import (
 	"fmt"
-	"github.com/PeopleAdmin/pdfcombiner/stat"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"launchpad.net/goamz/s3"
 	"log"
@@ -19,12 +18,11 @@ import (
 type Job struct {
 	BucketName     string               `json:"bucket_name"`
 	DocList        []Document           `json:"doc_list"`
-	Downloaded     []string             `json:"downloaded"`
+	Downloaded     []*Document					`json:"downloaded"`
 	CombinedKey    string               `json:"combined_key"`
 	Title          string               `json:"title,omitempty"`
 	Callback       string               `json:"callback"`
-	Errors         map[string]string    `json:"errors"`
-	PerfStats      map[string]stat.Stat `json:"perf_stats"`
+	Errors         []error              `json:"errors"`
 	uploadComplete bool
 	bucket         *s3.Bucket
 }
@@ -71,12 +69,12 @@ func (j *Job) CompleteCount() int {
 }
 
 // AddError adds to the list of encountered errors, translating obscure ones.
-func (j *Job) AddError(sourceFile string, newErr error) {
+func (j *Job) AddError(newErr error) {
 	log.Println(newErr)
 	if strings.Contains(newErr.Error(), "Get : 301 response missing Location header") {
 		newErr = fmt.Errorf("bucket %s not accessible from this account", j.BucketName)
 	}
-	j.Errors[sourceFile] = newErr.Error()
+	j.Errors = append(j.Errors, newErr)
 }
 
 // In test mode, randomly fail 10% of the time.
@@ -90,9 +88,8 @@ func (j *Job) isSuccessful() bool {
 // Initialize the fields which don't have usable zero-values.
 func (j *Job) setup() (err error) {
 	err = j.s3Connect()
-	j.Downloaded = make([]string, 0, len(j.DocList))
-	j.Errors = make(map[string]string)
-	j.PerfStats = make(map[string]stat.Stat)
+	j.Downloaded = make([]*Document, 0, len(j.DocList))
+	j.Errors = make([]error, 0, len(j.DocList))
 	j.setDocParents()
 	return
 }

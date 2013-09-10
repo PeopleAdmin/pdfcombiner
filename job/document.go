@@ -1,9 +1,5 @@
 package job
 
-import (
-	"github.com/PeopleAdmin/pdfcombiner/stat"
-)
-
 // A Document is a reference to one part of a combined PDF.
 // it is is identified by its Key field, which is required.  It can also
 // have a Title, used for TOC bookmarks in the final combined document.
@@ -14,11 +10,12 @@ import (
 //    and Base64-encoded string containing the PDF.
 // The bookmarks field is filled in by processing and is not serialized.
 type Document struct {
-	Key       string `json:"key"`
-	Title     string `json:"title"`
-	Data      string `json:"data,omitempty"`
-	parent    *Job
-	bookmarks []Bookmark
+	Key          string        `json:"key"`
+	Title        string        `json:"title"`
+	Data         string        `json:"data,omitempty"`
+	PageCount    int           `json:"page_count"`
+	parent       *Job
+	bookmarks    BookmarkList
 }
 
 func (doc *Document) isValid() bool {
@@ -36,9 +33,8 @@ func docsFromStrings(names []string) (docs []Document) {
 
 // MarkComplete adds a document to the list of downloaded docs.
 // TODO should be a Document.
-func (j *Job) MarkComplete(newdoc string, info stat.Stat) {
-	j.Downloaded = append(j.Downloaded, newdoc)
-	j.PerfStats[newdoc] = info
+func (j *Job) MarkComplete(doc *Document) {
+	j.Downloaded = append(j.Downloaded, doc)
 }
 
 // HasDownloadedDocs determines whether any documents been successfully
