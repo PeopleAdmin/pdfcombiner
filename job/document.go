@@ -43,7 +43,6 @@ func (j *Job) MarkComplete(newdoc string, info stat.Stat) {
 
 // HasDownloadedDocs determines whether any documents been successfully
 // downloaded.
-// TODO is it appropriate to use this to determine success in ToJSON()?
 func (j *Job) HasDownloadedDocs() bool {
 	return len(j.Downloaded) > 0
 }
