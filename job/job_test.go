@@ -42,6 +42,12 @@ func TestJobJSONDeserialization(t *testing.T) {
 	}
 }
 
+func TestJobInitialization(t *testing.T) {
+	j, _ := newFromString(ValidJSON)
+	assert.Equal(t, j.DocList[0].parent, j, "Documents can access the job they're part of")
+	assert.NotNil(t, j.bucket, "S3 gets connected after initialization")
+}
+
 func TestJobCompletion(t *testing.T) {
 	j, _ := newFromString(ValidJSON)
 	assert.Equal(t, j.CompleteCount(), 0, "New jobs have no complete docs")

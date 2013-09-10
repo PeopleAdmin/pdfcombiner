@@ -17,6 +17,7 @@ type Document struct {
 	Key       string `json:"key"`
 	Title     string `json:"title"`
 	Data      string `json:"data,omitempty"`
+	parent    *Job
 	bookmarks []Bookmark
 }
 

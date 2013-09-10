@@ -33,8 +33,8 @@ type Job struct {
 func New(bucket string, docs []string) (newJob *Job, err error) {
 	newJob = &Job{
 		BucketName: bucket,
-		DocList:    docsFromStrings(docs),
 	}
+	newJob.DocList = docsFromStrings(docs)
 	err = newJob.setup()
 	return
 }
@@ -89,9 +89,23 @@ func (j *Job) isSuccessful() bool {
 
 // Initialize the fields which don't have usable zero-values.
 func (j *Job) setup() (err error) {
-	err = j.connect()
+	err = j.s3Connect()
 	j.Downloaded = make([]string, 0, len(j.DocList))
 	j.Errors = make(map[string]string)
 	j.PerfStats = make(map[string]stat.Stat)
+	j.setDocParents()
 	return
+}
+
+// Initialize the S3 connection used to download and upload docs.
+func (j *Job) s3Connect() (err error) {
+	err = j.connect()
+	return
+}
+
+// Point each Document's parent pointer to the enclosing job.
+func (j *Job) setDocParents() {
+	for i, _ := range j.DocList {
+		j.DocList[i].parent = j
+	}
 }
