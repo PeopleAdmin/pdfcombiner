@@ -19,25 +19,30 @@ func CurrentWait() int32 {
 	return atomic.LoadInt32(&waitingCounter)
 }
 
-// throttle prevents the system from being overwhelmed with work.
-// Blocks until the number of active jobs is less than a preset threshold.
-func throttle() {
+// restricts the maximum number of in-progress jobs to prevent the system from
+// being overwhelmed with work.
+func waitInQueue() {
 	addWaiter()
 	for CurrentJobs() >= maxJobs {
 		time.Sleep(100 * time.Millisecond)
 	}
-	addJob()
+	startJob()
 }
 
 func addWaiter() {
 	atomic.AddInt32(&waitingCounter, 1)
 }
 
-func addJob() {
+func startJob() {
 	atomic.AddInt32(&waitingCounter, -1)
 	atomic.AddInt32(&jobCounter, 1)
 }
 
 func removeJob() {
 	atomic.AddInt32(&jobCounter, -1)
+}
+
+func resetCounters() {
+	atomic.StoreInt32(&jobCounter, 0)
+	atomic.StoreInt32(&waitingCounter, 0)
 }

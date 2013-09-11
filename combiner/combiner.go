@@ -18,7 +18,7 @@ var downloadTimeout = 3 * time.Minute
 // and posts the status to a callback endpoint.
 func Combine(j *job.Job) {
 	defer cleanup(j)
-	throttle()
+	waitInQueue()
 	getAllFiles(j)
 	if !j.HasDownloadedDocs() {
 		return
