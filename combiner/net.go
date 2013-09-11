@@ -12,13 +12,13 @@ import (
 // Get an individual file from S3.  If successful, writes the file out to disk
 // and sends a stat object back to the main channel.  If there are errors they
 // are sent back through the error channel.
-func getFile(doc *job.Document, dir string, c chan<- *job.Document, e chan<- error) {
+func getFile(doc *job.Document, c chan<- *job.Document, e chan<- error) {
 	data, err := doc.Get()
 	if err != nil {
 		e <- fmt.Errorf("%v: %v", doc.Key, err)
 		return
 	}
-	path := localPath(dir, doc)
+	path := doc.LocalPath()
 	err = ioutil.WriteFile(path, data, 0644)
 	if err != nil {
 		e <- fmt.Errorf("%v: %v", doc.Key, err)
@@ -30,11 +30,11 @@ func getFile(doc *job.Document, dir string, c chan<- *job.Document, e chan<- err
 
 // Fan out workers to download each document in parallel, then block
 // until all downloads are complete.
-func getAllFiles(j *job.Job, dir string) {
+func getAllFiles(j *job.Job) {
 	complete := make(chan *job.Document, j.DocCount())
 	failures := make(chan error, j.DocCount())
 	for _, doc := range j.DocList {
-		go getFile(&doc, dir, complete, failures)
+		go getFile(&doc, complete, failures)
 	}
 
 	waitForDownloads(j, complete, failures)

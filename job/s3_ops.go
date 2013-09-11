@@ -32,13 +32,13 @@ func (doc *Document) Get() (docContent []byte, err error) {
 }
 
 // UploadCombinedFile sends a file to the job's CombinedKey on S3.
-func (j *Job) UploadCombinedFile(localPath string) (err error) {
+func (j *Job) UploadCombinedFile() (err error) {
 	if testmode.IsEnabled() {
 		return
 	}
-	content, err := ioutil.ReadFile(localPath)
-	if err != nil {
-		j.AddError(fmt.Errorf("Reading file '%v' for upload: %v", localPath, err))
+	content, err := ioutil.ReadFile(j.LocalPath())
+	if err != nil || len(content) == 0 {
+		j.AddError(fmt.Errorf("Reading file '%v' for upload: %v", j.LocalPath(), err))
 		return
 	}
 	err = j.bucket.Put(j.CombinedKey, content, "application/pdf", uploadedFilePermission)

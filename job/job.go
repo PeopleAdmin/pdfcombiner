@@ -16,15 +16,16 @@ import (
 // It is mainly constructed from a JSON string in a HTTP request, but the
 // last two fields contain internal state.
 type Job struct {
-	BucketName     string               `json:"bucket_name"`
-	DocList        []Document           `json:"doc_list"`
-	Downloaded     []*Document					`json:"downloaded"`
-	CombinedKey    string               `json:"combined_key"`
-	Title          string               `json:"title,omitempty"`
-	Callback       string               `json:"callback"`
-	Errors         []error              `json:"errors"`
-	uploadComplete bool
-	bucket         *s3.Bucket
+	BucketName       string      `json:"bucket_name"`
+	DocList          []Document  `json:"doc_list"`
+	Downloaded       []*Document `json:"downloaded"`
+	CombinedKey      string      `json:"combined_key"`
+	Title            string      `json:"title,omitempty"`
+	Callback         string      `json:"callback"`
+	Errors           []error     `json:"errors"`
+	uploadComplete   bool
+	workingDirectory string
+	bucket           *s3.Bucket
 }
 
 // New is the default Job constructor.
@@ -68,6 +69,11 @@ func (j *Job) CompleteCount() int {
 	return len(j.Downloaded)
 }
 
+// Title returns the title of the document
+func (j *Job) CombinedTitle() string {
+	return j.Title
+}
+
 // AddError adds to the list of encountered errors, translating obscure ones.
 func (j *Job) AddError(newErr error) {
 	log.Println(newErr)
@@ -91,6 +97,7 @@ func (j *Job) setup() (err error) {
 	j.Downloaded = make([]*Document, 0, len(j.DocList))
 	j.Errors = make([]error, 0, len(j.DocList))
 	j.setDocParents()
+	j.mkTmpDir()
 	return
 }
 

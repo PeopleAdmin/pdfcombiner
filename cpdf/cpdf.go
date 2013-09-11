@@ -38,16 +38,6 @@ func (c *Cpdf) ListBookmarks() (out []byte, err error) {
 	return c.run()
 }
 
-// Merge concatenates the given files and adds a header in one pass.
-func (c *Cpdf) Merge(docPaths []string, title string) (err error) {
-	c.addMergeArgs(docPaths)
-	c.addArgs("AND")
-	c.addHeaderArgs(title)
-	c.addArgs("-o", c.File)
-	_, err = c.run()
-	return
-}
-
 // PageCount returns the number of pages in the document.
 func (c *Cpdf) PageCount() (result int, err error) {
 	c.command.Args = []string{"-pages", c.File}
@@ -60,22 +50,6 @@ func (c *Cpdf) PageCount() (result int, err error) {
 	return
 }
 
-func (c *Cpdf) addMergeArgs(docPaths []string) {
-	c.addArgs("-merge")
-	for _, doc := range docPaths {
-		c.addArgs(doc)
-	}
-}
-
-func (c *Cpdf) addHeaderArgs(title string) {
-	headerText := "Page %Page of %EndPage | Created %m-%d-%Y %T | " + title
-	c.addArgs("-add-text", headerText, "-top", "15", "-font", "Courier")
-}
-
-func (c *Cpdf) addArgs(newArgs ...string) {
-	c.command.Args = append(c.command.Args, newArgs...)
-}
-
 func (c *Cpdf) run() (output []byte, err error) {
 	if testmode.IsEnabled() {
 		return
@@ -85,6 +59,10 @@ func (c *Cpdf) run() (output []byte, err error) {
 		err = fmt.Errorf("%v - %s", err, output)
 	}
 	return
+}
+
+func (c *Cpdf) addArgs(newArgs ...string) {
+	c.command.Args = append(c.command.Args, newArgs...)
 }
 
 func cpdfPath() string {

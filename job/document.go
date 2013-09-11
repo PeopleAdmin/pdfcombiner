@@ -1,5 +1,9 @@
 package job
 
+import (
+	"strings"
+)
+
 // A Document is a reference to one part of a combined PDF.
 // it is is identified by its Key field, which is required.  It can also
 // have a Title, used for TOC bookmarks in the final combined document.
@@ -10,12 +14,16 @@ package job
 //    and Base64-encoded string containing the PDF.
 // The bookmarks field is filled in by processing and is not serialized.
 type Document struct {
-	Key          string        `json:"key"`
-	Title        string        `json:"title"`
-	Data         string        `json:"data,omitempty"`
-	PageCount    int           `json:"page_count"`
-	parent       *Job
-	bookmarks    BookmarkList
+	Key       string `json:"key"`
+	Title     string `json:"title"`
+	Data      string `json:"data,omitempty"`
+	PageCount int    `json:"page_count"`
+	parent    *Job
+	bookmarks BookmarkList
+}
+
+func (doc *Document) LocalPath() string {
+	return doc.parent.workingDirectory + strings.Replace(doc.Key, "/", "_", -1)
 }
 
 func (doc *Document) isValid() bool {

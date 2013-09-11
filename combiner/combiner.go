@@ -19,21 +19,17 @@ var downloadTimeout = 3 * time.Minute
 func Combine(j *job.Job) {
 	defer cleanup(j)
 	throttle()
-	saveDir := mkTmpDir()
-	getAllFiles(j, saveDir)
+	getAllFiles(j)
 	if !j.HasDownloadedDocs() {
 		return
 	}
 
-	componentPaths := fsPathsOf(j.Downloaded, saveDir)
-	combinedPath := saveDir + "combined.pdf"
-	merger := cpdf.New(combinedPath)
-	err := merger.Merge(componentPaths, j.Title)
+	err := cpdf.Merge(j)
 	if err != nil {
 		j.AddError(fmt.Errorf("while combining file: %v", err))
 		return
 	}
-	j.UploadCombinedFile(combinedPath)
+	j.UploadCombinedFile()
 	return
 }
 
