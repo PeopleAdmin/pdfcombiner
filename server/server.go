@@ -50,6 +50,9 @@ func (c CombinerServer) Listen(listenPort int) {
 // in-flight job count.
 func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	if !authenticate(w,r) {
+		return
+	}
 	j, err := job.NewFromJSON(r.Body)
 	logJobReceipt(r, j)
 	if err != nil || !j.IsValid() {
@@ -74,7 +77,7 @@ func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {
 func (c CombinerServer) Status(w http.ResponseWriter, r *http.Request) {
 	log.Println(requestInfo(r))
 	w.Header().Set("Content-Type", "application/json")
-	template := `{"host": "%s", "running": %d, "waiting": %d}`+"\n"
+	template := `{"host": "%s", "running": %d, "waiting": %d}` + "\n"
 	jobs := fmt.Sprintf(template,
 		host, combiner.CurrentJobs(), combiner.CurrentWait())
 	w.Write([]byte(jobs))

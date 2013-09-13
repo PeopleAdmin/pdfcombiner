@@ -65,5 +65,12 @@ with a JSON body similar to:
 
 `"success"` is true if at least one file downloaded successfully.
 
+This application requires authentication, please put a file in
+~/.pdfcombiner.json with content like:
+
+```json
+{"remote_user":"u","remote_password":"pass"}
+```
+
 You can also combine files in standalone mode from the command line.
 Use `./pdfcombiner -help` to get a list of options.

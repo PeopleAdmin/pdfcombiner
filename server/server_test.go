@@ -7,7 +7,12 @@ import (
 	"strings"
 	"testing"
 	"sync"
+	"os"
 )
+
+func init(){
+	os.Setenv("NO_HTTP_AUTH", "true")
+}
 
 var (
 	handler        = new(CombinerServer)
