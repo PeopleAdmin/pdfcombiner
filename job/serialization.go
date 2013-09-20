@@ -34,7 +34,7 @@ func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
 // ToJSON serializes the Job into a JSON byte slice.
 func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
-		Success:  j.isSuccessful(),
+		Success:  j.IsSuccessful(),
 		Errors:   j.Errors,
 		Callback: j.Callback,
 	}

@@ -84,7 +84,7 @@ func (j *Job) AddError(newErr error) {
 }
 
 // In test mode, randomly fail 10% of the time.
-func (j *Job) isSuccessful() bool {
+func (j *Job) IsSuccessful() bool {
 	if testmode.IsEnabledFast() {
 		return testmode.RandomBoolean(0.1)
 	}

@@ -3,9 +3,8 @@
 package notifier
 
 import (
-	"fmt"
 	"io"
-	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -14,10 +13,21 @@ import (
 type Notifiable interface {
 	Recipient() string
 	Content() io.Reader
+	IsSuccessful() bool
 }
 
 // SendNotification sends an HTTP message to the recipient with the job status.
 func SendNotification(n Notifiable) (response *http.Response, err error) {
+	response, err = deliver(n)
+	if err != nil {
+		log.Println("ERROR posting notification:", err)
+		return
+	}
+	logResponse(n, response)
+	return
+}
+
+func deliver(n Notifiable) (response *http.Response, err error) {
 	destination := n.Recipient()
 	payload := n.Content()
 	client := &http.Client{}
@@ -25,12 +35,20 @@ func SendNotification(n Notifiable) (response *http.Response, err error) {
 	req.SetBasicAuth("admin", "password")
 	req.Header.Set("Content-Type", "application/json")
 	response, err = client.Do(req)
-	if err != nil {
-		fmt.Println("Error posting notification:", err)
-		return
-	}
-	body, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
-	fmt.Println("Notification response body:", string(body))
 	return
+}
+
+func logResponse(n Notifiable, response *http.Response) {
+	log.Printf("%sNotified %s that job success was %v.  Got response %s\n",
+		prefix(response), n.Recipient(), n.IsSuccessful(), response.Status)
+}
+
+// Prefix the log message with error if it's not a 'good' code.
+func prefix(response *http.Response) string{
+	switch response.StatusCode {
+	case 200:
+		return ""
+	default:
+		return "ERROR: "
+	}
 }

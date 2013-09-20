@@ -7,7 +7,6 @@ import (
 	"github.com/PeopleAdmin/pdfcombiner/cpdf"
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"github.com/PeopleAdmin/pdfcombiner/notifier"
-	"log"
 	"time"
 )
 
@@ -36,7 +35,6 @@ func Combine(j *job.Job) {
 // Send an update on the success or failure of the operation to the
 // callback URL provided by the job originator.
 func cleanup(j *job.Job) {
-	log.Println("work complete, posting status to callback:", j.Callback)
 	notifier.SendNotification(j)
 	removeJob()
 }
