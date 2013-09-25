@@ -34,13 +34,14 @@ func New(filePath string) (c *Cpdf) {
 }
 
 func (c *Cpdf) ListBookmarks() (out []byte, err error) {
-	c.addArgs("-list-bookmarks", c.File)
+	c.setArgs("-list-bookmarks", c.File)
 	return c.run()
 }
 
 // PageCount returns the number of pages in the document.
+// TODO handle errors better (e.g. empty output, or count=0)
 func (c *Cpdf) PageCount() (result int, err error) {
-	c.command.Args = []string{"-pages", c.File}
+	c.setArgs("-pages", c.File)
 	out, err := c.run()
 	if err != nil {
 		return
@@ -59,6 +60,13 @@ func (c *Cpdf) run() (output []byte, err error) {
 		err = fmt.Errorf("%v - %s", err, output)
 	}
 	return
+}
+
+// Clear any existing args before setting the new ones.  Useful if you're
+// reusing an existing cpdf object.
+func (c *Cpdf) setArgs(newArgs ...string) {
+	c.command = exec.Command(cpdfbin)
+	c.addArgs(newArgs...)
 }
 
 func (c *Cpdf) addArgs(newArgs ...string) {
