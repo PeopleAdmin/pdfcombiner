@@ -93,6 +93,20 @@ func (j *Job) IsSuccessful() bool {
 	return j.uploadComplete
 }
 
+func (j *Job) CombinedBookmarkList() string {
+	lists := make([]string, len(j.Downloaded))
+	nextOffset := 1
+	for i, doc := range j.Downloaded {
+		lists[i] = doc.Bookmarks.InCombinedContext(doc.Title, nextOffset).String()
+		nextOffset += doc.PageCount
+	}
+	return strings.Join(lists, "\n")
+}
+
+func (j *Job) Dir() string {
+	return j.workingDirectory
+}
+
 // Initialize the fields which don't have usable zero-values.
 func (j *Job) setup() (err error) {
 	err = j.s3Connect()

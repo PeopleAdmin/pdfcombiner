@@ -20,7 +20,7 @@ type Bookmark struct {
 // TODO how do we handle errors here?
 func (doc *Document) GetMetadata(cmd cpdf.InfoCmd) {
 	doc.PageCount, _ = cmd.PageCount()
-	doc.bookmarks, _ = ExtractBookmarks(cmd)
+	doc.Bookmarks, _ = ExtractBookmarks(cmd)
 }
 
 func (b *Bookmark) String() string {
