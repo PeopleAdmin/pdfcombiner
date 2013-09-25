@@ -45,7 +45,7 @@ func (l BookmarkList) offsetBy(offset int) *BookmarkList {
 	newList := BookmarkList{make([]Bookmark, l.len())}
 	copy(newList.list, l.list)
 	for i, _ := range l.list {
-		newList.list[i].Page = l.list[i].Page + offset
+		newList.list[i].Page = l.list[i].Page + (offset - 1)
 	}
 	return &newList
 }
