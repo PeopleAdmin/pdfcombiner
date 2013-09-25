@@ -12,7 +12,7 @@ type BookmarkList struct {
 // bookmarks as they would appear in the context of a combined document.  That
 // is, a new level-0 bookmark is added with all existing bookmarks as children,
 // and all pages are offset by the document's start position.
-func (l *BookmarkList) InCombinedContext(title string, offset int) (newBm BookmarkList) {
+func (l BookmarkList) InCombinedContext(title string, offset int) (newBm BookmarkList) {
 	newBm = BookmarkList{
 		[]Bookmark{
 			Bookmark{0, title, offset},
