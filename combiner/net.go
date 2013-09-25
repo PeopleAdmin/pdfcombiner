@@ -33,8 +33,8 @@ func getFile(doc *job.Document, c chan<- *job.Document, e chan<- error) {
 func getAllFiles(j *job.Job) {
 	complete := make(chan *job.Document, j.DocCount())
 	failures := make(chan error, j.DocCount())
-	for _, doc := range j.DocList {
-		go getFile(&doc, complete, failures)
+	for i, _ := range j.DocList {
+		go getFile(&j.DocList[i], complete, failures)
 	}
 
 	waitForDownloads(j, complete, failures)
