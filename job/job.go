@@ -18,7 +18,7 @@ import (
 type Job struct {
 	BucketName       string      `json:"bucket_name"`
 	DocList          []Document  `json:"doc_list"`
-	Downloaded       []*Document `json:"downloaded"`
+	Downloaded       Documents   `json:"downloaded"`
 	CombinedKey      string      `json:"combined_key"`
 	Title            string      `json:"title,omitempty"`
 	Callback         string      `json:"callback"`
@@ -27,6 +27,8 @@ type Job struct {
 	workingDirectory string
 	bucket           *s3.Bucket
 }
+
+type Documents []*Document
 
 // New is the default Job constructor.
 func New(bucket string, docs []string) (newJob *Job, err error) {

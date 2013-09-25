@@ -23,6 +23,7 @@ func Combine(j *job.Job) {
 		return
 	}
 
+	j.SortDownloaded()
 	err := cpdf.Merge(j)
 	if err != nil {
 		j.AddError(fmt.Errorf("while combining file: %v", err))
