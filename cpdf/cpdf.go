@@ -4,6 +4,7 @@ package cpdf
 import (
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
+	"log"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -52,6 +53,7 @@ func (c *Cpdf) PageCount() (result int, err error) {
 }
 
 func (c *Cpdf) run() (output []byte, err error) {
+	log.Println(`CPDF: "`+strings.Join(c.command.Args, " ")+`"`)
 	if testmode.IsEnabled() {
 		return
 	}
