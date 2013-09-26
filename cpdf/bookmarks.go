@@ -11,22 +11,14 @@ type bookmarkable interface {
 	Dir() string
 }
 
-// Merge concatenates the given files and adds a header in one pass.
-func WriteCombinedBookmarks(job bookmarkable) (err error) {
-	infoPath := writeInfoFile(job)
-	c := New(job.LocalPath())
-	err = c.addBookmarksToFile(infoPath)
-	return
+func (c *Cpdf) addBookmarksArgs(job bookmarkable) {
+	c.addArgs("-add-bookmarks", infoPath(job))
 }
 
-func (c *Cpdf) addBookmarksToFile(infoPath string) (err error) {
-	c.setArgs("-add-bookmarks", infoPath, c.File, "-o", c.File)
-	_, err = c.run()
-	return
+func writeBookmarkInfoFile(job bookmarkable) error {
+	return ioutil.WriteFile(infoPath(job), []byte(job.CombinedBookmarkList()), 0644)
 }
 
-func writeInfoFile(job bookmarkable) string {
-	infoPath := job.Dir() + "bookmarks.info"
-	ioutil.WriteFile(infoPath, []byte(job.CombinedBookmarkList()), 0644)
-	return infoPath
+func infoPath(job bookmarkable) string {
+	return job.Dir() + "bookmarks.info"
 }

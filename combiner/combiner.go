@@ -29,10 +29,6 @@ func Combine(j *job.Job) {
 		j.AddError(fmt.Errorf("while combining file: %v", err))
 		return
 	}
-	err = cpdf.WriteCombinedBookmarks(j)
-	if err != nil {
-		j.AddError(fmt.Errorf("while adding bookmarks: %v", err))
-	}
 	j.UploadCombinedFile()
 	return
 }
