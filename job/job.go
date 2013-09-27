@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"launchpad.net/goamz/s3"
-	"log"
 	"strings"
 )
 
@@ -78,7 +77,6 @@ func (j *Job) CombinedTitle() string {
 
 // AddError adds to the list of encountered errors, translating obscure ones.
 func (j *Job) AddError(newErr error) {
-	log.Println(newErr)
 	if strings.Contains(newErr.Error(), "Get : 301 response missing Location header") {
 		newErr = fmt.Errorf("bucket %s not accessible from this account", j.BucketName)
 	}

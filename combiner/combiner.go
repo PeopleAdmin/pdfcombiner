@@ -7,6 +7,8 @@ import (
 	"github.com/PeopleAdmin/pdfcombiner/cpdf"
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"github.com/PeopleAdmin/pdfcombiner/notifier"
+	"log"
+	"strings"
 	"time"
 )
 
@@ -36,6 +38,16 @@ func Combine(j *job.Job) {
 // Send an update on the success or failure of the operation to the
 // callback URL provided by the job originator.
 func cleanup(j *job.Job) {
+	logErrors(j)
 	notifier.SendNotification(j)
 	removeJob()
+}
+
+func logErrors(j *job.Job) {
+	if len(j.Errors) > 0 {
+		log.Printf("ERRORS (%d) encountered while processing '%s':\n", len(j.Errors), j.Callback)
+		for i, err := range j.Errors {
+			log.Printf("  %d: %v", i+1, strings.Replace(err.Error(), "\n", `\n`, -1))
+		}
+	}
 }
