@@ -24,6 +24,7 @@ func init() {
 	if os.Getenv("NO_HTTP_AUTH") == "" {
 		settingsPath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), settingsFile)
 		content, err := os.Open(settingsPath)
+		defer content.Close()
 		if err != nil {
 			panic("Need settings file at " + settingsPath)
 		}
