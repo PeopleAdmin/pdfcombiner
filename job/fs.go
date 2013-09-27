@@ -25,6 +25,14 @@ func (j *Job) mkTmpDir() {
 	return
 }
 
+
+// Delete the tmp directory for this job.
+func (j *Job) Cleanup() {
+	if j.workingDirectory != "" && os.Getenv("DEBUG") == "" {
+		os.RemoveAll(j.workingDirectory)
+	}
+}
+
 // Get the absolute paths to the completed docs.
 func (j *Job) ComponentPaths() (paths []string) {
 	paths = make([]string, len(j.Downloaded))

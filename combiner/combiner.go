@@ -41,6 +41,7 @@ func cleanup(j *job.Job) {
 	logErrors(j)
 	notifier.SendNotification(j)
 	removeJob()
+	j.Cleanup()
 }
 
 func logErrors(j *job.Job) {
