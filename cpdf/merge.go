@@ -22,7 +22,7 @@ func Merge(job mergable) (err error) {
 	c.addHeaderArgs(job.CombinedTitle())
 	c.addArgs("AND")
 	c.addBookmarksArgs(job)
-	c.addArgs("-o", c.File)
+	c.addArgs("-l", "-o", c.File)
 	_, err = c.run()
 	return
 }
