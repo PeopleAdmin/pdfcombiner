@@ -14,12 +14,15 @@ import (
 
 // decodeEmbeddedData takes a base64-encoded string of a gzipped document and
 // returns the original source pdf as a byte slice.
-func decodeEmbeddedData(encoded string) (decoded []byte, err error) {
+func decodeEmbeddedData(doc *Document) (decoded []byte, err error) {
+	encoded := doc.Data
 	pipeline, err := zlib.NewReader(decoder(encoded))
 	defer pipeline.Close()
 	if err == nil {
 		decoded, err = ioutil.ReadAll(pipeline)
 	}
+	doc.Data = ""
+	doc.FileSize = len(decoded)
 	return
 }
 

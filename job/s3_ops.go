@@ -25,7 +25,7 @@ func (doc *Document) Get() (docContent []byte, err error) {
 	case "":
 		return doc.parent.download(doc)
 	default:
-		return decodeEmbeddedData(doc.Data)
+		return decodeEmbeddedData(doc)
 	}
 }
 
