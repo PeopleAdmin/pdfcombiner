@@ -9,22 +9,25 @@ import (
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"launchpad.net/goamz/s3"
 	"strings"
+	"time"
 )
 
 // A Job includes all the data necessary to execute a pdf combination.
 // It is mainly constructed from a JSON string in a HTTP request, but the
 // last two fields contain internal state.
 type Job struct {
-	BucketName       string      `json:"bucket_name"`
-	DocList          []Document  `json:"doc_list"`
-	Downloaded       Documents   `json:"downloaded"`
-	CombinedKey      string      `json:"combined_key"`
-	Title            string      `json:"title,omitempty"`
-	Callback         string      `json:"callback"`
-	Errors           []error     `json:"errors"`
+	BucketName       string     `json:"bucket_name"`
+	DocList          []Document `json:"doc_list"`
+	Downloaded       Documents  `json:"downloaded"`
+	CombinedKey      string     `json:"combined_key"`
+	Title            string     `json:"title,omitempty"`
+	Callback         string     `json:"callback"`
+	Errors           []error    `json:"errors"`
 	uploadComplete   bool
 	workingDirectory string
 	bucket           *s3.Bucket
+	recievedAt       time.Time
+	DownloadsDoneAt  time.Time
 }
 
 type Documents []*Document
@@ -107,6 +110,7 @@ func (j *Job) Dir() string {
 
 // Initialize the fields which don't have usable zero-values.
 func (j *Job) setup() (err error) {
+	j.recievedAt = time.Now()
 	err = j.s3Connect()
 	j.Downloaded = make([]*Document, 0, len(j.DocList))
 	j.Errors = make([]error, 0, len(j.DocList))

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"time"
 )
 
 // A JobResponse is sent as a notification -- it includes the success
@@ -13,6 +14,13 @@ type JobResponse struct {
 	Success    bool        `json:"success"`
 	Errors     []string    `json:"errors"`
 	Downloaded []*Document `json:"downloaded"`
+	Times      metrics     `json:"times"`
+}
+
+type metrics struct {
+	RecievedAt   time.Time
+	DownloadTime time.Duration
+	TotalTime    time.Duration
 }
 
 // NewFromJSON constructs a Job from an io.Reader containing JSON
@@ -37,6 +45,7 @@ func (j *Job) ToJSON() (jsonResponse []byte) {
 		Success:    j.IsSuccessful(),
 		Errors:     errStrs(j.Errors),
 		Downloaded: j.Downloaded,
+		Times:      newMetrics(j),
 	}
 	jsonResponse, _ = json.Marshal(response)
 	return
@@ -47,6 +56,13 @@ func errStrs(errors []error) (strings []string) {
 	for i, err := range errors {
 		strings[i] = err.Error()
 	}
+	return
+}
+
+func newMetrics(j *Job) (m metrics) {
+	m.RecievedAt = j.recievedAt
+	m.DownloadTime = j.DownloadsDoneAt.Sub(j.recievedAt)
+	m.TotalTime = time.Since(j.recievedAt)
 	return
 }
 
