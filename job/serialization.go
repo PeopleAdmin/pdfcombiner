@@ -12,7 +12,6 @@ import (
 type JobResponse struct {
 	Success    bool        `json:"success"`
 	Errors     []string    `json:"errors"`
-	Callback   string      `json:"callback"`
 	Downloaded []*Document `json:"downloaded"`
 }
 
@@ -37,7 +36,6 @@ func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
 		Success:    j.IsSuccessful(),
 		Errors:     errStrs(j.Errors),
-		Callback:   j.Callback,
 		Downloaded: j.Downloaded,
 	}
 	jsonResponse, _ = json.Marshal(response)
