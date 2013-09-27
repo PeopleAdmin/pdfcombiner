@@ -19,7 +19,7 @@ type Document struct {
 	Data      string `json:"data,omitempty"`
 	PageCount int    `json:"page_count"`
 	parent    *Job
-	Bookmarks BookmarkList
+	Bookmarks BookmarkList `json:"-"`
 }
 
 func (doc *Document) LocalPath() string {

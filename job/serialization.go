@@ -10,9 +10,10 @@ import (
 // A JobResponse is sent as a notification -- it includes the success
 // status as well as a subset of the job fields.
 type JobResponse struct {
-	Success  bool     `json:"success"`
-	Errors   []string `json:"errors"`
-	Callback string   `json:"callback"`
+	Success    bool        `json:"success"`
+	Errors     []string    `json:"errors"`
+	Callback   string      `json:"callback"`
+	Downloaded []*Document `json:"downloaded"`
 }
 
 // NewFromJSON constructs a Job from an io.Reader containing JSON
@@ -34,9 +35,10 @@ func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
 // ToJSON serializes the Job into a JSON byte slice.
 func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
-		Success:  j.IsSuccessful(),
-		Errors:   errStrs(j.Errors),
-		Callback: j.Callback,
+		Success:    j.IsSuccessful(),
+		Errors:     errStrs(j.Errors),
+		Callback:   j.Callback,
+		Downloaded: j.Downloaded,
 	}
 	jsonResponse, _ = json.Marshal(response)
 	return
