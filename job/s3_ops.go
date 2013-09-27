@@ -14,10 +14,6 @@ var (
 	uploadedFilePermission = s3.Private
 )
 
-type Downloadable interface {
-	s3Path() string
-}
-
 // Get retrieves the requested document, either from S3 or by decoding the
 // embedded `Data` attribute of the Document.
 func (doc *Document) Get() (docContent []byte, err error) {
@@ -63,7 +59,9 @@ func (j *Job) connect() (err error) {
 	return
 }
 
-func (j *Job) download(doc Downloadable) (content []byte, err error) {
+func (j *Job) download(doc *Document) (content []byte, err error) {
 	remotePath := doc.s3Path()
-	return j.bucket.Get(remotePath)
+	content, err = j.bucket.Get(remotePath)
+	doc.FileSize = len(content)
+	return
 }

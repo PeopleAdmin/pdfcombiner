@@ -18,6 +18,7 @@ type Document struct {
 	Title     string `json:"title"`
 	Data      string `json:"data,omitempty"`
 	PageCount int    `json:"page_count"`
+	FileSize  int    `json:"file_size"`
 	parent    *Job
 	Bookmarks BookmarkList `json:"-"`
 }
