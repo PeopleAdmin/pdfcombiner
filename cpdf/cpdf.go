@@ -41,6 +41,8 @@ func (c *Cpdf) ListBookmarks() (out []byte, err error) {
 
 // PageCount returns the number of pages in the document.
 func (c *Cpdf) PageCount() (result int, err error) {
+	if testmode.IsEnabled() { return 1, nil }
+
 	c.setArgs("-pages", c.File)
 	out, err := c.run()
 	if err != nil {
@@ -52,7 +54,7 @@ func (c *Cpdf) PageCount() (result int, err error) {
 }
 
 func (c *Cpdf) run() (output []byte, err error) {
-	log.Println(`CPDF: "`+strings.Join(c.command.Args, " ")+`"`)
+	log.Println(`CPDF: "` + strings.Join(c.command.Args, " ") + `"`)
 	if testmode.IsEnabled() {
 		return
 	}
