@@ -40,7 +40,6 @@ func (c *Cpdf) ListBookmarks() (out []byte, err error) {
 }
 
 // PageCount returns the number of pages in the document.
-// TODO handle errors better (e.g. empty output, or count=0)
 func (c *Cpdf) PageCount() (result int, err error) {
 	c.setArgs("-pages", c.File)
 	out, err := c.run()
