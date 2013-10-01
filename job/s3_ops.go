@@ -46,6 +46,7 @@ func (j *Job) UploadCombinedFile() (err error) {
 	err = j.bucket.Put(j.CombinedKey, content, "application/pdf", uploadedFilePermission)
 	if err != nil {
 		j.AddError(fmt.Errorf("Uploading to S3 key '%s': %v", j.CombinedKey, err))
+		return
 	}
 	j.uploadComplete = true
 	return
