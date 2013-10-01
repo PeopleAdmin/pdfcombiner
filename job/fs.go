@@ -44,9 +44,9 @@ func (j *Job) ComponentPaths() (paths []string) {
 // For every doc that failed for whatever reason, replace it with a page
 // containing an error message.
 func (j *Job) CleanupBrokenDocs() {
-	for _, doc := range j.DocList {
+	for i, doc := range j.DocList {
 		if !j.wasDownloaded(doc) {
-			doc.writeErrorDocument()
+			j.DocList[i].writeErrorDocument()
 		}
 	}
 }
