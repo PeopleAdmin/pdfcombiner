@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-var docs = []*Document{
-	&Document{
+var docs = []Document{
+	Document{
 		Title: "First",
 		PageCount: 5,
 		Bookmarks: BookmarkList{
@@ -17,12 +17,12 @@ var docs = []*Document{
 			},
 		},
 	},
-	&Document{
+	Document{
 		Title: "Second",
 		PageCount: 3,
 		Bookmarks: BookmarkList{ []Bookmark{} },
 	},
-	&Document{
+	Document{
 		Title: "Third",
 		PageCount: 8,
 		Bookmarks: BookmarkList{
@@ -36,7 +36,7 @@ var docs = []*Document{
 	},
 }
 
-var job = Job{Downloaded: docs}
+var job = Job{DocList: docs}
 
 func TestJobCombinedBookmarkList(t *testing.T) {
 	assert.Equal(t,

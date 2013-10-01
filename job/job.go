@@ -95,9 +95,9 @@ func (j *Job) IsSuccessful() bool {
 }
 
 func (j *Job) CombinedBookmarkList() string {
-	lists := make([]string, len(j.Downloaded))
+	lists := make([]string, len(j.DocList))
 	nextOffset := 1
-	for i, doc := range j.Downloaded {
+	for i, doc := range j.DocList {
 		lists[i] = doc.Bookmarks.InCombinedContext(doc.Title, nextOffset).String()
 		nextOffset += doc.PageCount
 	}

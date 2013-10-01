@@ -41,7 +41,9 @@ func (c *Cpdf) ListBookmarks() (out []byte, err error) {
 
 // PageCount returns the number of pages in the document.
 func (c *Cpdf) PageCount() (result int, err error) {
-	if testmode.IsEnabled() { return 1, nil }
+	if testmode.IsEnabled() {
+		return 1, nil
+	}
 
 	c.setArgs("-pages", c.File)
 	out, err := c.run()
@@ -82,4 +84,12 @@ func cpdfPath() string {
 		panic("no cpdf found in path")
 	}
 	return pathToCmd
+}
+
+// Intended for use on a blank file used to indicate an error to the user.
+func (c *Cpdf) WriteErrorMessage(title string) {
+	message := fmt.Sprintf("There was an error including the file: '%s'.", title)
+	c.addArgs("-add-text", message, "-topleft", "50", "-font-size", "16", c.File,
+		"-o", c.File)
+	c.run()
 }
