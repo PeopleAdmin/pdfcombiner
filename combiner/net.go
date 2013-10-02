@@ -24,7 +24,11 @@ func getFile(doc *job.Document, c chan<- *job.Document, e chan<- error) {
 		e <- fmt.Errorf("%v: %v", doc.Key, err)
 		return
 	}
-	doc.GetMetadata(cpdf.New(path))
+	err = doc.GetMetadata(cpdf.New(path))
+	if err != nil {
+		e <- fmt.Errorf("While extracting metadata from '%v': %v", doc.Key, err)
+		return
+	}
 	c <- doc
 }
 
@@ -33,8 +37,8 @@ func getFile(doc *job.Document, c chan<- *job.Document, e chan<- error) {
 func getAllFiles(j *job.Job) {
 	complete := make(chan *job.Document, j.DocCount())
 	failures := make(chan error, j.DocCount())
-	for _, doc := range j.DocList {
-		go getFile(&doc, complete, failures)
+	for i, _ := range j.DocList {
+		go getFile(&j.DocList[i], complete, failures)
 	}
 
 	waitForDownloads(j, complete, failures)

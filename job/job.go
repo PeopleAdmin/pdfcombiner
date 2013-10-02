@@ -8,25 +8,29 @@ import (
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"launchpad.net/goamz/s3"
-	"log"
 	"strings"
+	"time"
 )
 
 // A Job includes all the data necessary to execute a pdf combination.
 // It is mainly constructed from a JSON string in a HTTP request, but the
 // last two fields contain internal state.
 type Job struct {
-	BucketName       string      `json:"bucket_name"`
-	DocList          []Document  `json:"doc_list"`
-	Downloaded       []*Document `json:"downloaded"`
-	CombinedKey      string      `json:"combined_key"`
-	Title            string      `json:"title,omitempty"`
-	Callback         string      `json:"callback"`
-	Errors           []error     `json:"errors"`
+	BucketName       string     `json:"bucket_name"`
+	DocList          []Document `json:"doc_list"`
+	Downloaded       Documents  `json:"downloaded"`
+	CombinedKey      string     `json:"combined_key"`
+	Title            string     `json:"title,omitempty"`
+	Callback         string     `json:"callback"`
+	Errors           []error    `json:"errors"`
 	uploadComplete   bool
 	workingDirectory string
 	bucket           *s3.Bucket
+	recievedAt       time.Time
+	DownloadsDoneAt  time.Time
 }
+
+type Documents []*Document
 
 // New is the default Job constructor.
 func New(bucket string, docs []string) (newJob *Job, err error) {
@@ -76,7 +80,6 @@ func (j *Job) CombinedTitle() string {
 
 // AddError adds to the list of encountered errors, translating obscure ones.
 func (j *Job) AddError(newErr error) {
-	log.Println(newErr)
 	if strings.Contains(newErr.Error(), "Get : 301 response missing Location header") {
 		newErr = fmt.Errorf("bucket %s not accessible from this account", j.BucketName)
 	}
@@ -91,8 +94,23 @@ func (j *Job) IsSuccessful() bool {
 	return j.uploadComplete
 }
 
+func (j *Job) CombinedBookmarkList() string {
+	lists := make([]string, len(j.DocList))
+	nextOffset := 1
+	for i, doc := range j.DocList {
+		lists[i] = doc.Bookmarks.InCombinedContext(doc.Title, nextOffset).String()
+		nextOffset += doc.PageCount
+	}
+	return strings.Join(lists, "\n")
+}
+
+func (j *Job) Dir() string {
+	return j.workingDirectory
+}
+
 // Initialize the fields which don't have usable zero-values.
 func (j *Job) setup() (err error) {
+	j.recievedAt = time.Now()
 	err = j.s3Connect()
 	j.Downloaded = make([]*Document, 0, len(j.DocList))
 	j.Errors = make([]error, 0, len(j.DocList))

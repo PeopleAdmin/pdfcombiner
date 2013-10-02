@@ -5,14 +5,22 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"time"
 )
 
 // A JobResponse is sent as a notification -- it includes the success
 // status as well as a subset of the job fields.
 type JobResponse struct {
-	Success  bool    `json:"success"`
-	Errors   []error `json:"errors"`
-	Callback string  `json:"callback"`
+	Success    bool        `json:"success"`
+	Errors     []string    `json:"errors"`
+	Downloaded []*Document `json:"downloaded"`
+	Times      metrics     `json:"times"`
+}
+
+type metrics struct {
+	RecievedAt   time.Time
+	DownloadTime time.Duration
+	TotalTime    time.Duration
 }
 
 // NewFromJSON constructs a Job from an io.Reader containing JSON
@@ -34,11 +42,27 @@ func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
 // ToJSON serializes the Job into a JSON byte slice.
 func (j *Job) ToJSON() (jsonResponse []byte) {
 	response := JobResponse{
-		Success:  j.IsSuccessful(),
-		Errors:   j.Errors,
-		Callback: j.Callback,
+		Success:    j.IsSuccessful(),
+		Errors:     errStrs(j.Errors),
+		Downloaded: j.Downloaded,
+		Times:      newMetrics(j),
 	}
 	jsonResponse, _ = json.Marshal(response)
+	return
+}
+
+func errStrs(errors []error) (strings []string) {
+	strings = make([]string, len(errors))
+	for i, err := range errors {
+		strings[i] = err.Error()
+	}
+	return
+}
+
+func newMetrics(j *Job) (m metrics) {
+	m.RecievedAt = j.recievedAt
+	m.DownloadTime = j.DownloadsDoneAt.Sub(j.recievedAt)
+	m.TotalTime = time.Since(j.recievedAt)
 	return
 }
 

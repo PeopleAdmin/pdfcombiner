@@ -1,6 +1,9 @@
 package job
 
 import (
+	"github.com/PeopleAdmin/pdfcombiner/cpdf"
+	"github.com/PeopleAdmin/pdfcombiner/fixtures"
+	"io/ioutil"
 	"strings"
 )
 
@@ -18,8 +21,9 @@ type Document struct {
 	Title     string `json:"title"`
 	Data      string `json:"data,omitempty"`
 	PageCount int    `json:"page_count"`
+	FileSize  int    `json:"file_size"`
 	parent    *Job
-	bookmarks BookmarkList
+	Bookmarks BookmarkList `json:"-"`
 }
 
 func (doc *Document) LocalPath() string {
@@ -53,4 +57,13 @@ func (j *Job) HasDownloadedDocs() bool {
 
 func (doc *Document) s3Path() string {
 	return doc.Key
+}
+
+// Used when a file fails to download or is unreadable.  Write out a blank
+// document and add an error message to it, so the user sees that something
+// went wrong instead of just leaving a requested document missing.
+func (doc *Document) writeErrorDocument() {
+	ioutil.WriteFile(doc.LocalPath(), fixtures.BlankDoc, 0644)
+	cpdf.New(doc.LocalPath()).WriteErrorMessage(doc.Title)
+	doc.PageCount = 1
 }
