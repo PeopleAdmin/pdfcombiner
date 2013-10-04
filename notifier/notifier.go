@@ -3,6 +3,7 @@
 package notifier
 
 import (
+	"github.com/PeopleAdmin/pdfcombiner/config"
 	"io"
 	"log"
 	"net/http"
@@ -32,7 +33,7 @@ func deliver(n Notifiable) (response *http.Response, err error) {
 	payload := n.Content()
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", destination, payload)
-	req.SetBasicAuth("admin", "password")
+	req.SetBasicAuth(config.TransmitUser(), config.TransmitPass())
 	req.Header.Set("Content-Type", "application/json")
 	response, err = client.Do(req)
 	return
