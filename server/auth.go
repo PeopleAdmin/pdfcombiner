@@ -2,8 +2,8 @@ package server
 
 import (
 	"bitbucket.org/taruti/http_auth"
-	"encoding/json"
 	"fmt"
+	"github.com/PeopleAdmin/pdfcombiner/config"
 	"log"
 	"math/rand"
 	"net/http"
@@ -11,38 +11,11 @@ import (
 	"time"
 )
 
-const settingsFile = ".pdfcombiner.json"
-
-type configfile struct {
-	User string `json:"remote_user"`
-	Pass string `json:"remote_password"`
-}
-
-var config configfile
-
-func init() {
-	if os.Getenv("NO_HTTP_AUTH") == "" {
-		settingsPath := fmt.Sprintf("%s/%s", os.Getenv("HOME"), settingsFile)
-		content, err := os.Open(settingsPath)
-		defer content.Close()
-		if err != nil {
-			panic("Need settings file at " + settingsPath)
-		}
-		err = json.NewDecoder(content).Decode(&config)
-		if err != nil {
-			panic("Not JSON:" + settingsPath)
-		}
-		if config.User == "" || config.Pass == "" {
-			panic("User name and password must be configured")
-		}
-	}
-}
-
 var auth = http_auth.NewBasic("Realm", func(user string, realm string) string {
-	if user != config.User {
+	if user != config.ListenUser() {
 		return randPass()
 	}
-	return config.Pass
+	return config.ListenPass()
 })
 
 func authenticate(w http.ResponseWriter, r *http.Request) (authState bool) {
