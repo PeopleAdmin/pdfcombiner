@@ -7,7 +7,7 @@
     "InstanceType" : {
       "Description" : "AppServer EC2 instance type",
       "Type" : "String",
-      "Default" : "m1.small",
+      "Default" : "m1.large",
       "AllowedValues" : [
         "t1.micro","m1.small","m1.medium","m1.large","m1.xlarge","m2.xlarge",
         "m2.2xlarge","m2.4xlarge","m3.xlarge","m3.2xlarge","c1.medium",
@@ -16,7 +16,18 @@
     },
     "KeyName" : {
       "Description" : "The EC2 Key Pair to allow SSH access to the instances",
-      "Type" : "String"
+      "Type" : "String",
+      "Default" : "pdfcombiner"
+    },
+    "LoadBalancer" : {
+      "Description" : "The ELB name to attach to",
+      "Type" : "String",
+      "Default" : "pdfcombiner"
+    },
+    "SecurityGroup" : {
+      "Description" : "The security group for instances to belong to.  Make sure the ELB is included!",
+      "Type" : "String",
+      "Default" : "pdfcombiner-elb"
     },
     "S3AccessKeyId" : {
       "Description" : "The AWS Access key to use against S3",
@@ -26,42 +37,26 @@
       "Description" : "The AWS Secret Access key to use against S3",
       "Type" : "String"
     },
-    "DownloadUrl" : {
-      "Description" : "Where to download the pdfcombiner app from",
+    "DeployBucket" : {
+      "Description" : "The s3 bucket used to download the pdfcombiner binary and cpdf from.  It's expected to have files called pdfcombiner and cpdf in the bucket root.",
       "Type" : "String",
-      "Default" : "http://github.com/PeopleAdmin/pdfcombiner/releases/download/v0.1/pdfcombiner"
+      "Default" : "pdfcombiner-deploy"
     },
-    "SSHLocation" : {
-      "Description" : "The IP address range that can be used to SSH to the EC2 instances",
-      "Type": "String",
-      "MinLength": "9",
-      "MaxLength": "18",
-      "Default": "0.0.0.0/0",
-      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
-      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
-   }
-  },
-
-  "Mappings" : {
-    "AWSInstanceType2Arch" : {
-      "t1.micro"    : { "Arch" : "64" },
-      "m1.small"    : { "Arch" : "64" },
-      "m1.medium"   : { "Arch" : "64" },
-      "m1.large"    : { "Arch" : "64" },
-      "m1.xlarge"   : { "Arch" : "64" },
-      "m2.xlarge"   : { "Arch" : "64" },
-      "m2.2xlarge"  : { "Arch" : "64" },
-      "m2.4xlarge"  : { "Arch" : "64" },
-      "m3.xlarge"   : { "Arch" : "64" },
-      "m3.2xlarge"  : { "Arch" : "64" },
-      "c1.medium"   : { "Arch" : "64" },
-      "c1.xlarge"   : { "Arch" : "64" }
+    "ListenUser" : {
+      "Description" : "The user name used to authenticate incoming connections",
+      "Type" : "String"
     },
-
-    "AWSRegionArch2AMI" : {
-      "us-east-1"      : { "32" : "ami-aba768c2", "64" : "ami-81a768e8" },
-      "us-west-1"      : { "32" : "ami-458fd300", "64" : "ami-b18ed2f4" },
-      "us-west-2"      : { "32" : "ami-fcff72cc", "64" : "ami-feff72ce" }
+    "ListenPassword" : {
+      "Description" : "The password used to authenticate incoming connections",
+      "Type" : "String"
+    },
+    "TransmitUser" : {
+      "Description" : "The username transmitted when making callbacks",
+      "Type" : "String"
+    },
+    "TransmitPassword" : {
+      "Description" : "The username transmitted when making callbacks",
+      "Type" : "String"
     }
   },
 
@@ -73,7 +68,14 @@
         "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
         "MinSize" : "1",
         "MaxSize" : "5",
-        "LoadBalancerNames" : [ { "Ref" : "ElasticLoadBalancer" } ]
+        "LoadBalancerNames" : [ { "Ref" : "LoadBalancer" } ],
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "pdfcombiner-autoscaled",
+            "PropagateAtLaunch" : true
+          }
+        ]
       }
     },
 
@@ -81,33 +83,105 @@
       "Type" : "AWS::AutoScaling::LaunchConfiguration",
       "Properties" : {
         "KeyName" : { "Ref" : "KeyName" },
-        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
-                                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" },
-                                          "Arch" ] } ] },
-        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
-        "InstanceType" : { "Ref" : "InstanceType" }
+        "ImageId" : "ami-d0f89fb9",
+        "SecurityGroups" : [ { "Ref" : "SecurityGroup" } ],
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#!/bin/bash -v\n\n",
+
+          "# Set up crontab for logrotation\n",
+          "echo \"@daily logrotate -s /home/ubuntu/logrotate.state --force /home/ubuntu/logrotate.conf\" | crontab -u ubuntu -\n\n",
+
+          "# Run cloudformation bootstrap\n",
+          "apt-get -y install python-setuptools\n",
+          "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+          "cfn-init -v ",
+          "         -s ", { "Ref" : "AWS::StackName" },
+          "         -r LaunchConfig",
+          "         -c ALL\n\n",
+
+          "# Ensure all files in ~ubuntu owned by ubuntu\n",
+          "find /home/ubuntu/ | xargs chown ubuntu:ubuntu\n\n",
+
+          "# Start service\n",
+          "service pdfcombiner start"
+        ]]}}
       },
       "Metadata" : {
         "Comment" : "Pdfcombiner configuration",
+        "AWS::CloudFormation::Authentication" : {
+          "S3AccessCreds" : {
+            "type" : "S3",
+            "accessKeyId" : { "Ref" : "S3AccessKeyId" },
+            "secretKey" : { "Ref" : "S3SecretAccessKey" },
+            "buckets" : [ { "Ref" : "DeployBucket" } ]
+          }
+        },
         "AWS::CloudFormation::Init" : {
           "configSets" : {
-            "ALL" : ["ExecutableFile","ConfigFile"]
+            "ALL" : [ "DefaultSet" ]
           },
-          "ExecutableFile" : {
-            "sources" : {
-              "/home/ec2-user/pdfcombiner" : { "Ref" : "DownloadUrl" }
-            }
-          },
-          "ConfigFile" : {
+          "DefaultSet" : {
             "files" : {
-              "/home/ec2-user/.env" : {
+              "/home/ubuntu/.pdfcombiner.json" : {
                 "content" : { "Fn::Join" : ["", [
-                  "AWS_ACCESS_KEY_ID=", { "Ref" : "S3AccessKeyId" }, "\n",
-                  "AWS_SECRET_ACCESS_KEY=", { "Ref" : "S3SecretAccessKey" }, "\n"
+                  "{",
+                    "\"remote_user\":\"",     { "Ref" : "ListenUser" },       "\",",
+                    "\"remote_password\":\"", { "Ref" : "ListenPassword" },   "\",",
+                    "\"local_user\":\"",      { "Ref" : "TransmitUser" },     "\",",
+                    "\"local_password\":\"",  { "Ref" : "TransmitPassword" },
+                  "\"}\n"
                 ]]},
                 "mode"    : "000644",
-                "owner"   : "ec2-user",
-                "group"   : "ec2-user"
+                "owner"   : "ubuntu",
+                "group"   : "ubuntu"
+              },
+              "/home/ubuntu/logrotate.conf" : {
+                "content" : { "Fn::Join" : ["\n", [
+                  "/home/ubuntu/pdfcombiner/*.log {",
+                  "  daily",
+                  "  missingok",
+                  "  copytruncate",
+                  "  rotate 30",
+                  "  compress",
+                  "  notifempty",
+                  "  nocreate",
+                  "}\n"
+                ]]},
+                "mode"    : "000644",
+                "owner"   : "ubuntu",
+                "group"   : "ubuntu"
+              },
+              "/etc/init/pdfcombiner.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "start on runlevel [345]\n",
+                  "stop on runlevel [!345]\n",
+                  "chdir /home/ubuntu/pdfcombiner\n",
+                  "setgid ubuntu\n",
+                  "setuid ubuntu\n",
+                  "env HOME=/home/ubuntu\n",
+                  "env GOMAXPROCS=2\n",
+                  "env AWS_ACCESS_KEY_ID=", {"Ref" : "S3AccessKeyId"}, "\n",
+                  "env AWS_SECRET_ACCESS_KEY=", { "Ref" : "S3SecretAccessKey" }, "\n",
+                  "exec ./pdfcombiner -server >> pdfcombiner.log 2>&1\n"
+                ]]},
+                "mode"    : "000644",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+              "/usr/local/bin/cpdf": {
+                "source" : { "Fn::Join" : ["", ["http://" , { "Ref" : "DeployBucket" }, ".s3.amazonaws.com/cpdf"]]},
+                "mode" : "000755",
+                "owner" : "root",
+                "group" : "root",
+                "authentication": "S3AccessCreds"
+              },
+              "/home/ubuntu/pdfcombiner/pdfcombiner": {
+                "source" : { "Fn::Join" : ["", ["http://" , { "Ref" : "DeployBucket" }, ".s3.amazonaws.com/pdfcombiner"]]},
+                "mode" : "000755",
+                "owner" : "ubuntu",
+                "group" : "ubuntu",
+                "authentication" : "S3AccessCreds"
               }
             }
           }
@@ -173,52 +247,6 @@
         ],
         "ComparisonOperator": "LessThanThreshold"
       }
-    },
-
-    "ElasticLoadBalancer" : {
-      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-      "Properties" : {
-        "AvailabilityZones" : { "Fn::GetAZs" : "" },
-        "Listeners" : [ {
-          "LoadBalancerPort" : "80",
-          "InstancePort" : "8080",
-          "Protocol" : "HTTP"
-        } ],
-        "HealthCheck" : {
-          "Target" : "HTTP:8080/health_check",
-          "HealthyThreshold" : "3",
-          "UnhealthyThreshold" : "5",
-          "Interval" : "30",
-          "Timeout" : "5"
-        }
-      }
-    },
-
-    "InstanceSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "Enable SSH access and HTTP from the load balancer only",
-        "SecurityGroupIngress" : [ {
-          "IpProtocol" : "tcp",
-          "FromPort" : "22",
-          "ToPort" : "22",
-          "CidrIp" : { "Ref" : "SSHLocation"}
-        },
-        {
-          "IpProtocol" : "tcp",
-          "FromPort" : "8080",
-          "ToPort" : "8080",
-          "SourceSecurityGroupOwnerId" : {"Fn::GetAtt" : ["ElasticLoadBalancer", "SourceSecurityGroup.OwnerAlias"]},
-          "SourceSecurityGroupName" : {"Fn::GetAtt" : ["ElasticLoadBalancer", "SourceSecurityGroup.GroupName"]}
-        } ]
-      }
-    }
-  },
-
-  "Outputs" : {
-    "URL" : {
-      "Description" : "The URL of the service",
-      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : [ "ElasticLoadBalancer", "DNSName" ]}]]}
     }
   }
 }
