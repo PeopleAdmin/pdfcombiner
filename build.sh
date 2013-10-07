@@ -2,23 +2,12 @@
 #
 # Build pdfcombiner as a linux(amd64) package.
 #
-# Dependencies:
-#   - golang-crosscompile:
-#     - `git clone git://github.com/davecheney/golang-crosscompile.git`
-#     - `export -f go-crosscompile-build
+# Dependency:
 #   - go source tree:
 #     - `hg clone https://code.google.com/p/go`
 #     - `export GOROOT=$PWD/go`
 
 REQUIRED_HEADER="include/plan9/amd64/u.h"
-
-verify_crosscompile()
-{
-  if [[ `type -t go-crosscompile-build` != "function" ]];then
-    echo "Need to \`source golang-crosscompile/crosscompile.bash\` and \`export -f go-crosscompile-build\` "
-    exit 1
-  fi
-}
 
 verify_goroot()
 {
@@ -28,30 +17,31 @@ verify_goroot()
   fi
 }
 
-verify_aws()
+build_go()
 {
-  if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]]; then
-    echo "\$AWS_ACCESS_KEY_ID and \$AWS_SECRET_ACCESS_KEY should be set and have access to deploy bucket"
-    exit 1
-  fi
+  OLDPWD=$PWD
+  cd $(go env GOROOT)/src
+  GOOS=linux GOARCH=amd64 ./make.bash --no-clean 2>&1
+  cd $OLDPWD
+}
+
+build_pdfcombiner()
+{
+  GOOS=linux GOARCH=amd64 go build
 }
 
 verify_goroot
-verify_aws
-verify_crosscompile
-OLDPWD=$PWD
 
-if ! go-crosscompile-build linux/amd64; then
-  "building go failed" && exit 1
+if ! build_go; then
+  echo "failed to build go" && exit 1
 fi
 
-cd $OLDPWD
-if ! GOOS=linux GOARCH=amd64 go build; then
-  echo "building pdfcombiner failed" && exit 1
+if ! build_pdfcombiner; then
+  echo "crosscompiling pdfcombiner failed" && exit 1
 fi
 
 if ! file ./pdfcombiner | grep -q "ELF 64-bit LSB executable"; then
-  echo "Something went wrong, bailing!" && exit 1
+  echo "Something went wrong - the package built for the wrong arch, bailing!" && exit 1
 fi
 
-echo "Done building pdfcombiner for linux-amd64 at ./pdfcombiner"
+echo "Done crosscompiling pdfcombiner for linux-amd64 at ./pdfcombiner"
