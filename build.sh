@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Build pdfcombiner as a linux(amd64) package and copy it to an S3 bucket.
-# dependencies:
+#
+# Build pdfcombiner as a linux(amd64) package.
+#
+# Dependencies:
 #   - golang-crosscompile:
 #     - `git clone git://github.com/davecheney/golang-crosscompile.git`
 #     - `export -f go-crosscompile-build
 #   - go source tree:
 #     - `hg clone https://code.google.com/p/go`
 #     - `export GOROOT=$PWD/go`
-#
 
 REQUIRED_HEADER="include/plan9/amd64/u.h"
 
