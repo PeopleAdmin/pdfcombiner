@@ -59,9 +59,9 @@
       "Type" : "String"
     },
     "DeployString" : {
-      "Description" : "An arbitrary string used to trigger redeploys when changed.",
+      "Description" : "A string used to identify the most recent deploy",
       "Type" : "String",
-      "Default" : "Hello World!"
+      "Default" : "Initial deploy"
     }
   },
 
