@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require_relative 'lib/deployer'
+
+Deployer.update_stack!
+Deployer.copy_binary_and_restart!

@@ -10,7 +10,7 @@
 #     - export AWS_SECRET_ACCESS_KEY=DEPLOY_KEY_HERE
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/deploy/common.sh
+source $DIR/lib/common.sh
 
 DEPLOY_BUCKET=${DEPLOY_BUCKET:-pdfcombiner-deploy}
 DEPLOY_URI="s3://$DEPLOY_BUCKET"
@@ -33,4 +33,4 @@ if previous_binary_exists; then
 fi
 
 deploy
-echo "deploy complete!"
+echo "File copy complete!"

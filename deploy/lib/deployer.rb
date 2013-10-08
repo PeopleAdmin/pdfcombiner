@@ -1,6 +1,5 @@
-#!/usr/bin/env ruby
-
 require 'fog'
+
 # TODO don't execute any actions while stack rebuild is already in progress
 module Deployer
   unless ENV['AWS_ACCESS_KEY_ID'] && ENV['AWS_SECRET_ACCESS_KEY']
@@ -24,6 +23,7 @@ module Deployer
   # change that requires a restart), it will trigger a rolling rebuild of all
   # instances with the new size.
   def self.update_stack!(params_to_update={})
+    return false unless safe_to_update?
     new_params = deploy_timestamp.merge(params_to_update)
     CloudFormation.update_stack(new_params)
     logger.info("Updated stack with params: #{new_params}")
@@ -39,23 +39,36 @@ module Deployer
     logger.info("Redeployed and restarted service on #{deploy_instances}")
   end
 
-  # TODO check if this is actually a resize
+  # Resize all servers in the scaling group to the given instance size.
   # TODO provide estimate based on server count and current delay param
   def self.resize!(new_size)
-    self.update_stack!('InstanceType' => new_size)
-    logger.info("Finished setting new size to '#{new_size}'.  Rolling restart in progress")
-    logger.info("Check the events tab at #{progress_url} to monitor progress")
+    if self.update_stack!('InstanceType' => new_size)
+      logger.info("Finished setting new size to '#{new_size}'.  Rolling restart in progress")
+      logger.info(progress_message)
+    end
+  end
+
+  private
+
+  def self.safe_to_update?
+    case status = CloudFormation.stack['StackStatus']
+    when /COMPLETE$/
+      true
+    else
+      logger.error("Can't update stack while in state '#{status}'.")
+      logger.error(progress_message)
+      false
+    end
   end
 
   def self.logger
     @logger ||= Logger.new($stdout)
   end
 
-  private
-
-  def progress_url
-    "https://console.aws.amazon.com/cloudformation/home?region=us-east-1"+
-    "#ConsoleState:viewing=ACTIVE&stack=#{STACK_NAME}&tab=Resources"
+  def self.progress_message
+    url="https://console.aws.amazon.com/cloudformation/home?region=us-east-1"+
+    "#ConsoleState:viewing=ACTIVE&stack=#{STACK_NAME}&tab=Events"
+    "Check #{url} to monitor progress"
   end
 
   def self.deploy_timestamp
@@ -79,12 +92,16 @@ module Deployer
         asg && asg['PhysicalResourceId']
       end
 
-      private
-
       # The currently deployed parameters of the stack.
       def current_params
         stack["Parameters"].inject({}, &extract_params)
       end
+
+      def stack
+        @stack ||= stack_with_name(STACK_NAME)
+      end
+
+      private
 
       def extract_params
         ->(memo, curr) {
@@ -97,13 +114,9 @@ module Deployer
         response['StackResources']
       end
 
-      def stack
-        stack_with_name(STACK_NAME)
-      end
-
       def template_contents
-        pwd = File.dirname(File.dirname(__FILE__))
-        File.read( File.join(pwd, 'cloudformation.json'))
+        pwd = File.expand_path File.dirname(__FILE__)
+        File.read( File.join(pwd, '../cloudformation.json'))
       end
 
       def stack_with_name(name)

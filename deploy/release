@@ -1,0 +1,13 @@
+#!/usr/bin/env bash -e
+# Build the app, copy deployment binary, and restart all app instances.
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+echo "Building..."
+$DIR/build
+
+echo "Copying to S3..."
+$DIR/copy
+
+echo "Triggering restart..."
+$DIR/restart_instances

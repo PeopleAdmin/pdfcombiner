@@ -8,7 +8,7 @@
 #     - `export GOROOT=$PWD/go`
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/deploy/common.sh
+source $DIR/lib/common.sh
 
 REQUIRED_HEADER="include/plan9/amd64/u.h"
 

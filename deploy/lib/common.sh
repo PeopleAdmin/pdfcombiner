@@ -1,23 +1,20 @@
 # Common functions for deploying and building
 
-verify_goroot()
-{
+verify_goroot() {
   if [[ ! -f $GOROOT/$REQUIRED_HEADER ]]; then
     echo "Go source needs to be set to \$GOROOT and \$GOROOT/$REQUIRED_HEADER should exist"
     exit 1
   fi
 }
 
-build_go()
-{
+build_go() {
   OLDPWD=$PWD
   cd $(go env GOROOT)/src
   GOOS=linux GOARCH=amd64 ./make.bash --no-clean 2>&1
   cd $OLDPWD
 }
 
-build_pdfcombiner()
-{
+build_pdfcombiner() {
   GOOS=linux GOARCH=amd64 go build
 }
 
@@ -66,7 +63,7 @@ backup() {
 }
 
 deploy() {
-  echo "Deploying to $DEPLOY_FILE..."
+  echo "Copying deployment binary to $DEPLOY_FILE..."
   aws --region us-east-1 s3 cp ./pdfcombiner $DEPLOY_FILE
   if [[ $? != 0 ]]; then
     echo "problem deploying!" && exit 1
