@@ -22,7 +22,7 @@ module Deployer
   # change that requires a restart), it will trigger a rolling rebuild of all
   # instances with the new size.
   def self.update_stack!(params_to_update={})
-    return false unless safe_to_update?
+    raise 'aborting deploy' unless safe_to_update?
     new_params = deploy_timestamp.merge(params_to_update)
     CloudFormation.update_stack(new_params)
     logger.info("Updated stack with params: #{new_params}")
