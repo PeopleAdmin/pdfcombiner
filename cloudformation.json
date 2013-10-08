@@ -57,6 +57,11 @@
     "TransmitPassword" : {
       "Description" : "The username transmitted when making callbacks",
       "Type" : "String"
+    },
+    "DeployString" : {
+      "Description" : "An arbitrary string used to trigger redeploys when changed.",
+      "Type" : "String",
+      "Default" : "Hello World!"
     }
   },
 
@@ -168,6 +173,12 @@
                 "mode"    : "000644",
                 "owner"   : "root",
                 "group"   : "root"
+              },
+              "/home/ubuntu/deploy-info" : {
+                "content" : { "Ref" : "DeployString" },
+                "mode"    : "000644",
+                "owner"   : "ubuntu",
+                "group"   : "ubuntu"
               },
               "/usr/local/bin/cpdf": {
                 "source" : { "Fn::Join" : ["", ["http://" , { "Ref" : "DeployBucket" }, ".s3.amazonaws.com/cpdf"]]},
