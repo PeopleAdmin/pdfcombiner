@@ -157,8 +157,11 @@ module Deployer
   end
 
   class SshTool
-    REDEPLOY_COMMAND = "sudo cfn-init -v -s #{STACK_NAME} -r LaunchConfig -c ALL"
-    RESTART_COMMAND = 'sudo service pdfcombiner restart'
+    DEPLOY_COMMANDS = [
+      "sudo cfn-init -v -s #{STACK_NAME} -r LaunchConfig -c ALL",
+      "sudo service pdfcombiner restart",
+      "sleep 1 && curl http://localhost:8080/health_check"
+    ]
 
     def initialize(instance_ids)
       @ec2 = Fog::Compute.new(CREDS.merge(provider: 'AWS'))
@@ -166,17 +169,23 @@ module Deployer
       @running_instances = find_instances_by_ids(instance_ids)
     end
 
-    # TODO check for service status after/during
-    # handle failed ssh
     def redeploy
       Deployer.logger.info("About to deploy to #{friendly_server_names}")
       @running_instances.each do |instance|
         instance.private_key_path = ENV['PDFCOMBINER_PEM']
-        responses = instance.ssh([RESTART_COMMAND, REDEPLOY_COMMAND])
-        if responses.any?{ |response| response.status != 0 }
-          raise "redeploy failed on #{instance}: #{responses}"
+        instance.ssh(DEPLOY_COMMANDS).each do |response|
+          if !response.status.zero?
+            Deployer.logger.error("redeploy failed on #{instance} "+
+              "while running '#{response.command}'"+
+              "stdout:#{response.stdout}\nstderr:#{response.stderr}")
+            raise "Aborting deploy"
+          end
         end
       end
+    end
+
+    def failed?
+      ->(response){ response.status != 0 }
     end
 
     def find_instances_by_ids(ids)
