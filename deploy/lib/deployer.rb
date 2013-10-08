@@ -1,6 +1,5 @@
 require 'fog'
 
-# TODO don't execute any actions while stack rebuild is already in progress
 module Deployer
   unless ENV['AWS_ACCESS_KEY_ID'] && ENV['AWS_SECRET_ACCESS_KEY']
     raise "Need credentials at $AWS_ACCESS_KEY_ID and $AWS_SECRET_ACCESS_KEY"
