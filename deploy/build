@@ -18,6 +18,7 @@ if ! build_go; then
   echo "failed to build go" && exit 1
 fi
 
+cd $DIR/..
 if ! build_pdfcombiner; then
   echo "crosscompiling pdfcombiner failed" && exit 1
 fi

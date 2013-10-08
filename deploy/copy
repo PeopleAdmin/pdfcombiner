@@ -19,6 +19,8 @@ DEPLOY_FILE="$DEPLOY_URI/pdfcombiner"
 verify_aws
 check_bucket
 
+cd $DIR/..
+
 if [[ ! -f ./pdfcombiner ]]; then
   echo "Nothing to deploy" && exit 1
 fi
