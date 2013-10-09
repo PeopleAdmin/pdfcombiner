@@ -47,7 +47,7 @@ func getAllFiles(j *job.Job) {
 // Listen on several channels for information from background download
 // tasks -- each task will either send a s.Stat through c, an error through
 // e, or timeout.  Once all docs are accounted for, return the total number
-// of bytes recieved.
+// of bytes received.
 func waitForDownloads(j *job.Job, complete <-chan *job.Document, failures <-chan error) {
 	for _ = range j.DocList {
 		select {

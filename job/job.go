@@ -26,7 +26,7 @@ type Job struct {
 	uploadComplete   bool
 	workingDirectory string
 	bucket           *s3.Bucket
-	recievedAt       time.Time
+	receivedAt       time.Time
 	DownloadsDoneAt  time.Time
 }
 
@@ -110,7 +110,7 @@ func (j *Job) Dir() string {
 
 // Initialize the fields which don't have usable zero-values.
 func (j *Job) setup() (err error) {
-	j.recievedAt = time.Now()
+	j.receivedAt = time.Now()
 	err = j.s3Connect()
 	j.Downloaded = make([]*Document, 0, len(j.DocList))
 	j.Errors = make([]error, 0, len(j.DocList))
