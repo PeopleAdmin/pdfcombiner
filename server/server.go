@@ -49,6 +49,10 @@ func (c CombinerServer) Listen(listenPort int) {
 // it validates, send it along to be fulfilled, keeping track of the
 // in-flight job count.
 func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.NotFound(w, r)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	if !authenticate(w,r) {
 		return
