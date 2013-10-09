@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+require_relative 'lib/deployer'
+
+# Run a command on every machine in the autoscaling group.
+class Ssher
+
+  def initialize(command)
+    if command.empty?
+      puts "please specify a command to run" && exit(1)
+    end
+    @command = command
+  end
+
+  def run
+    puts Deployer.exec_on_each(@command)
+  end
+
+end
+
+Ssher.new(ARGV.join(' ')).run

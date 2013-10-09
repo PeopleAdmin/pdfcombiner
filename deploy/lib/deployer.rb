@@ -31,11 +31,13 @@ module Deployer
   # Runs the cfn-init command on any existing instances via ssh, which will
   # copy the current binary and restart the service.
   def self.copy_binary_and_restart!
-    asg_id = CloudFormation.autoscaling_group_id
-    asg = AutoScalingGroup.new(asg_id)
-    deploy_instances = asg.running_instance_ids
     SshTool.new(deploy_instances).redeploy
     logger.info("Redeployed and restarted service on #{deploy_instances}")
+  end
+
+  # Run a command on each instance and return the output.
+  def self.exec_on_each(command)
+    SshTool.new(deploy_instances).exec_on_each(command)
   end
 
   # Resize all servers in the scaling group to the given instance size.
@@ -48,6 +50,12 @@ module Deployer
   end
 
   private
+
+  def self.deploy_instances
+    asg_id = CloudFormation.autoscaling_group_id
+    asg = AutoScalingGroup.new(asg_id)
+    asg.running_instance_ids
+  end
 
   def self.safe_to_update?
     case status = CloudFormation.stack['StackStatus']
@@ -179,6 +187,19 @@ module Deployer
               "while running '#{response.command}'"+
               "stdout:#{response.stdout}\nstderr:#{response.stderr}")
             raise "Aborting deploy"
+          end
+        end
+      end
+    end
+
+    # Run a command on each instance and return the output.
+    def exec_on_each(command)
+      @running_instances.map do |instance|
+        instance.private_key_path = ENV['PDFCOMBINER_PEM']
+        response = instance.ssh(command).first
+        "#{instance.id}:'#{response.stdout.chomp}' (exit #{response.status})".tap do |out|
+          if !response.stderr.empty?
+            out+=" ERR:'#{response.stderr}'"
           end
         end
       end

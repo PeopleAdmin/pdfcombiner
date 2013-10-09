@@ -27,7 +27,10 @@ Scripts
  - `./deploy/copy` -- copy the S3 binary to the deploy bucket
  - `./deploy/restart_instances` -- SSH to each running instance, redeploy the binary from the deploy bucket and restart the service daemon.
 
-There is also a script called `./deploy/resize` which can adjust the size of the ec2 instances up or down and perform a rolling rebuild.
+Other administration scripts:
+
+ - `./deploy/resize` -- adjust the size of the ec2 instances up or down and perform a rolling rebuild.
+ - `./deploy/ssh` -- run a command on every running machine a la `knife ssh`
 
 Lower level access to the deployment internals can be got via `deploy/lib/deployer.rb`.
 
