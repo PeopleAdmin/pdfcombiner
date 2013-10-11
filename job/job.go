@@ -10,6 +10,9 @@ import (
 	"launchpad.net/goamz/s3"
 	"strings"
 	"time"
+	"crypto/sha1"
+	"encoding/hex"
+	"io"
 )
 
 // A Job includes all the data necessary to execute a pdf combination.
@@ -23,6 +26,7 @@ type Job struct {
 	Title            string     `json:"title,omitempty"`
 	Callback         string     `json:"callback"`
 	Errors           []error    `json:"errors"`
+	uuid             string
 	uploadComplete   bool
 	workingDirectory string
 	bucket           *s3.Bucket
@@ -116,7 +120,19 @@ func (j *Job) setup() (err error) {
 	j.Errors = make([]error, 0, len(j.DocList))
 	j.setDocParents()
 	j.mkTmpDir()
+	j.mkUuid()
 	return
+}
+
+// Hash the callback into six characters for ease of logging.
+func (j *Job) mkUuid() {
+	h := sha1.New()
+  io.WriteString(h, j.Callback)
+  j.uuid = hex.EncodeToString(h.Sum(nil)[2:5])
+}
+
+func (j *Job) Id() string {
+	return j.uuid
 }
 
 // Initialize the S3 connection used to download and upload docs.

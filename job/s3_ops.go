@@ -17,7 +17,7 @@ var (
 // Get retrieves the requested document, either from S3 or by decoding the
 // embedded `Data` attribute of the Document.
 func (doc *Document) Get() (docContent []byte, err error) {
-	log.Printf("GET s3://%s/%s\n", doc.parent.BucketName, doc.s3Path())
+	log.Printf("%s GET s3://%s/%s\n", doc.Id(), doc.parent.BucketName, doc.s3Path())
 	if testmode.IsEnabled() {
 		return
 	}
@@ -34,7 +34,7 @@ func (doc *Document) Get() (docContent []byte, err error) {
 
 // UploadCombinedFile sends a file to the job's CombinedKey on S3.
 func (j *Job) UploadCombinedFile() (err error) {
-	log.Printf("PUT s3://%s/%s\n", j.BucketName, j.CombinedKey)
+	log.Printf("%s PUT s3://%s/%s\n", j.Id(), j.BucketName, j.CombinedKey)
 	if testmode.IsEnabled() {
 		return
 	}

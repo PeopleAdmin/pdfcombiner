@@ -48,7 +48,7 @@ func cleanup(j *job.Job) {
 
 func logErrors(j *job.Job) {
 	if len(j.Errors) > 0 {
-		log.Printf("ERRORS (%d) encountered while processing '%s':\n", len(j.Errors), j.Callback)
+		log.Printf("%s ERRORS (%d) encountered while processing '%s':\n", j.Id(), len(j.Errors), j.Callback)
 		for i, err := range j.Errors {
 			log.Printf("  %d: %v", i+1, strings.Replace(err.Error(), "\n", `\n`, -1))
 		}

@@ -59,11 +59,15 @@ func (doc *Document) s3Path() string {
 	return doc.Key
 }
 
+func (doc *Document) Id() string {
+	return doc.parent.Id()
+}
+
 // Used when a file fails to download or is unreadable.  Write out a blank
 // document and add an error message to it, so the user sees that something
 // went wrong instead of just leaving a requested document missing.
 func (doc *Document) writeErrorDocument() {
 	ioutil.WriteFile(doc.LocalPath(), fixtures.BlankDoc, 0644)
-	cpdf.New(doc.LocalPath()).WriteErrorMessage(doc.Title)
+	cpdf.New(doc.LocalPath(),doc.Id()).WriteErrorMessage(doc.Title)
 	doc.PageCount = 1
 }

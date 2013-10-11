@@ -26,11 +26,13 @@ type ManipulatorCmd interface {
 type Cpdf struct {
 	File    string
 	command *exec.Cmd
+	id      string
 }
 
-func New(filePath string) (c *Cpdf) {
+func New(filePath string, id string) (c *Cpdf) {
 	c = &Cpdf{File: filePath}
 	c.command = exec.Command(cpdfbin)
+	c.id = id
 	return
 }
 
@@ -56,7 +58,7 @@ func (c *Cpdf) PageCount() (result int, err error) {
 }
 
 func (c *Cpdf) run() (output []byte, err error) {
-	log.Println(`CPDF: "` + strings.Join(c.command.Args, " ") + `"`)
+	log.Println(c.id, `CPDF: "`+strings.Join(c.command.Args, " ")+`"`)
 	if testmode.IsEnabled() {
 		return
 	}

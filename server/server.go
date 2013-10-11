@@ -88,7 +88,7 @@ func (c CombinerServer) Status(w http.ResponseWriter, r *http.Request) {
 }
 
 func logJobReceipt(r *http.Request, j *job.Job) {
-	log.Printf("%v, callback: %v\n", requestInfo(r), j.Callback)
+	log.Printf("%v, callback: %v, id: \n", requestInfo(r), j.Callback, j.Id)
 }
 
 func requestInfo(r *http.Request) string {

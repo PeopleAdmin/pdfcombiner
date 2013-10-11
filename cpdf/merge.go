@@ -6,6 +6,7 @@ import "fmt"
 type mergable interface {
 	CombinedTitle() string
 	ComponentPaths() []string
+	Id() string
 	bookmarkable
 }
 
@@ -16,7 +17,7 @@ func Merge(job mergable) (err error) {
 	if err != nil {
 		return fmt.Errorf("while creating bookmark file: %v", err)
 	}
-	c := New(job.LocalPath())
+	c := New(job.LocalPath(), job.Id())
 	c.addMergeArgs(job.ComponentPaths())
 	c.addArgs("AND")
 	c.addHeaderArgs(job.CombinedTitle())

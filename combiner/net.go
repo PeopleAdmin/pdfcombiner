@@ -24,7 +24,7 @@ func getFile(doc *job.Document, c chan<- *job.Document, e chan<- error) {
 		e <- fmt.Errorf("%v: %v", doc.Key, err)
 		return
 	}
-	err = doc.GetMetadata(cpdf.New(path))
+	err = doc.GetMetadata(cpdf.New(path, doc.Id()))
 	if err != nil {
 		e <- fmt.Errorf("While extracting metadata from '%v': %v", doc.Key, err)
 		return

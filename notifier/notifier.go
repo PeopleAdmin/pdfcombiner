@@ -15,13 +15,14 @@ type Notifiable interface {
 	Recipient() string
 	Content() io.Reader
 	IsSuccessful() bool
+	Id() string
 }
 
 // SendNotification sends an HTTP message to the recipient with the job status.
 func SendNotification(n Notifiable) (response *http.Response, err error) {
 	response, err = deliver(n)
 	if err != nil {
-		log.Println("ERROR posting notification:", err)
+		log.Println(n.Id(), "ERROR posting notification:", err)
 		return
 	}
 	logResponse(n, response)
@@ -40,12 +41,12 @@ func deliver(n Notifiable) (response *http.Response, err error) {
 }
 
 func logResponse(n Notifiable, response *http.Response) {
-	log.Printf("%sNotified %s that job success was %v.  Got response %s\n",
-		prefix(response), n.Recipient(), n.IsSuccessful(), response.Status)
+	log.Printf("%s %sNotified %s that job success was %v.  Got response %s\n",
+		n.Id(), prefix(response), n.Recipient(), n.IsSuccessful(), response.Status)
 }
 
 // Prefix the log message with error if it's not a 'good' code.
-func prefix(response *http.Response) string{
+func prefix(response *http.Response) string {
 	switch response.StatusCode {
 	case 200:
 		return ""
