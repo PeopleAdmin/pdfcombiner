@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+# Change the default min / max instance count for autoscaling
+
+require_relative 'lib/deployer'
+require 'json'
+require 'active_support/core_ext/hash/slice'
+
+
+class Rebalancer
+  def initialize(params)
+    if params.size != 2
+      puts "Specify a minimum size and a maximum size."
+      exit 1
+    end
+    @min, @max = params
+  end
+
+  def rebalance!
+    puts "Current balancing params are #{current_size}"
+    if current_size == new_size
+      puts "Nothing to do."
+      exit 0
+    end
+    Deployer.update_stack!(new_size)
+  end
+
+  def current_size
+    current_params.slice('MinInstances','MaxInstances')
+  end
+
+  def current_params
+    @current_params ||= Deployer::CloudFormation.current_params
+  end
+
+  def new_size
+    {'MinInstances' => @min, 'MaxInstances' => @max}
+  end
+
+end
+
+Rebalancer.new(ARGV).rebalance!

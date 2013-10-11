@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+
+require_relative 'lib/deployer'
+require 'formatador'
+
+class Info
+
+  def initialize
+    @asg = Deployer.autoscaling_group
+  end
+
+  def run
+    display_queue_status
+    display_asg_status
+    display_instance_data
+  end
+
+  def display_lb_data
+    Formatador.display_line('[green]Load Balancer status:[/]')
+    puts lb_info.inspect
+    Formatador.display_compact_table([lb_info])
+  end
+
+  def display_queue_status
+    Formatador.display_line('[green]Queue status:[/]')
+    Deployer.exec_on_each("curl http://localhost:8080/status").each do |response|
+      Formatador.display_line(response)
+    end
+  end
+
+
+  def display_asg_status
+    Formatador.display_line('[green]Autoscaling group status:[/]')
+    Formatador.display_compact_table(asg_info)
+  end
+
+  def display_instance_data
+    Formatador.display_line('[green]Instances:[/]')
+    instances = Deployer::SshTool.new(@asg.running_instance_ids).running_instances
+    Formatador.display_compact_table(instances.map(&instance_attributes))
+  end
+
+  def lb_info
+    instance_attributes.call(Deployer::LoadBalancer)
+  end
+
+  def asg_info
+    @asg.group.instances.map &:attributes
+  end
+
+  def instance_attributes
+    ->(instance) {
+      instance.attributes.dup.keep_if &in_desired_attributes?
+    }
+  end
+
+  def in_desired_attributes?
+    ->(k,v) {
+      [:id, :dns_name, :availability_zone, :flavor_id, :created_at, :key_name, :state, :instances].include? k
+    }
+  end
+
+
+end
+
+Info.new.run

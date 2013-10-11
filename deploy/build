@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# Build pdfcombiner as a linux(amd64) package.
+#
+# Dependency:
+#   - go source tree:
+#     - `hg clone https://code.google.com/p/go`
+#     - `export GOROOT=$PWD/go`
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/lib/common.sh
+
+REQUIRED_HEADER="include/plan9/amd64/u.h"
+
+verify_goroot
+
+if ! build_go; then
+  echo "failed to build go" && exit 1
+fi
+
+cd $DIR/..
+if ! build_pdfcombiner; then
+  echo "crosscompiling pdfcombiner failed" && exit 1
+fi
+
+if ! correct_arch; then
+  echo "Something went wrong - the package built for the wrong arch, bailing!" && exit 1
+fi
+
+echo "Done crosscompiling pdfcombiner for linux-amd64 at ./pdfcombiner"

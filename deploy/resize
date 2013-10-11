@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+# Change the desired EC2 instance size
+
+require_relative 'lib/deployer'
+require 'json'
+
+class Resizer
+  def initialize(size)
+    @size = size
+    unless @size && allowed_sizes.include?(@size)
+      puts "Specify a size.  Allowed values are:\n#{allowed_sizes.join('|')}"
+      exit 1
+    end
+  end
+
+  def resize!
+    puts "current instance size is set to #{current_size}."
+    if @size == current_size
+      puts "Nothing to do."
+      exit 0
+    end
+    Deployer.resize! @size
+  end
+
+  def current_size
+    @current_size ||= Deployer::CloudFormation.current_params["InstanceType"]
+  end
+
+  def allowed_sizes
+    @allowed_sizes ||= template["Parameters"]["InstanceType"]["AllowedValues"]
+  end
+
+  def template
+    pwd = File.expand_path File.dirname(__FILE__)
+    content = File.read( File.join(pwd, 'cloudformation.json'))
+    parsed = JSON.parse(content)
+  end
+end
+
+Resizer.new(ARGV[0]).resize!

@@ -1,0 +1,280 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "pdfcombiner cloudformation template",
+
+  "Parameters" : {
+    "InstanceType" : {
+      "Description" : "AppServer EC2 instance type",
+      "Type" : "String",
+      "Default" : "m1.large",
+      "AllowedValues" : [
+        "t1.micro","m1.small","m1.medium","m1.large","m1.xlarge","m2.xlarge",
+        "m2.2xlarge","m2.4xlarge","m3.xlarge","m3.2xlarge","c1.medium",
+        "c1.xlarge", "cc1.4xlarge","cc2.8xlarge","cg1.4xlarge"],
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+    },
+    "KeyName" : {
+      "Description" : "The EC2 Key Pair to allow SSH access to the instances",
+      "Type" : "String",
+      "Default" : "pdfcombiner"
+    },
+    "LoadBalancer" : {
+      "Description" : "The ELB name to attach to",
+      "Type" : "String",
+      "Default" : "pdfcombiner"
+    },
+    "SecurityGroup" : {
+      "Description" : "The security group for instances to belong to.  Make sure the ELB is included!",
+      "Type" : "String",
+      "Default" : "pdfcombiner-elb"
+    },
+    "S3AccessKeyId" : {
+      "Description" : "The AWS Access key to use against S3",
+      "Type" : "String"
+    },
+    "S3SecretAccessKey" : {
+      "Description" : "The AWS Secret Access key to use against S3",
+      "Type" : "String"
+    },
+    "DeployBucket" : {
+      "Description" : "The s3 bucket used to download the pdfcombiner binary and cpdf from.  It's expected to have files called pdfcombiner and cpdf in the bucket root.",
+      "Type" : "String",
+      "Default" : "pdfcombiner-deploy"
+    },
+    "ListenUser" : {
+      "Description" : "The user name used to authenticate incoming connections",
+      "Type" : "String"
+    },
+    "ListenPassword" : {
+      "Description" : "The password used to authenticate incoming connections",
+      "Type" : "String"
+    },
+    "TransmitUser" : {
+      "Description" : "The username transmitted when making callbacks",
+      "Type" : "String"
+    },
+    "TransmitPassword" : {
+      "Description" : "The username transmitted when making callbacks",
+      "Type" : "String"
+    },
+    "DeployString" : {
+      "Description" : "A string used to identify the most recent deploy",
+      "Type" : "String",
+      "Default" : "Initial deploy"
+    },
+    "MinInstances" : {
+      "Description" : "The minimum number of instances to run at one time",
+      "Type" : "String",
+      "Default" : "2"
+    },
+    "MaxInstances" : {
+      "Description" : "The maximum number of instances to scale up to when load is high.",
+      "Type" : "String",
+      "Default" : "5"
+    }
+  },
+
+  "Resources" : {
+    "AppServerGroup" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "UpdatePolicy" : {
+        "AutoScalingRollingUpdate" : {
+          "MinInstancesInService" : "1",
+          "MaxBatchSize" : "1",
+          "PauseTime" : "PT1M"
+        }
+      },
+      "Properties" : {
+        "AvailabilityZones" : { "Fn::GetAZs" : ""},
+        "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
+        "MinSize" : { "Ref" : "MinInstances" },
+        "MaxSize" : { "Ref" : "MaxInstances" },
+        "LoadBalancerNames" : [ { "Ref" : "LoadBalancer" } ],
+        "Tags" : [
+          {
+            "Key" : "Name",
+            "Value" : "pdfcombiner-autoscaled",
+            "PropagateAtLaunch" : true
+          }
+        ]
+      }
+    },
+
+    "LaunchConfig" : {
+      "Type" : "AWS::AutoScaling::LaunchConfiguration",
+      "Properties" : {
+        "KeyName" : { "Ref" : "KeyName" },
+        "ImageId" : "ami-d0f89fb9",
+        "SecurityGroups" : [ { "Ref" : "SecurityGroup" } ],
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#!/bin/bash -v\n\n",
+
+          "# Set up crontab for logrotation\n",
+          "echo \"@daily logrotate -s /home/ubuntu/logrotate.state --force /home/ubuntu/logrotate.conf\" | crontab -u ubuntu -\n\n",
+
+          "# Run cloudformation bootstrap\n",
+          "apt-get -y install python-setuptools\n",
+          "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+          "cfn-init -v ",
+          "         -s ", { "Ref" : "AWS::StackName" },
+          "         -r LaunchConfig",
+          "         -c ALL\n\n",
+
+          "# Ensure all files in ~ubuntu owned by ubuntu\n",
+          "find /home/ubuntu/ | xargs chown ubuntu:ubuntu\n\n",
+
+          "# Start service\n",
+          "service pdfcombiner start"
+        ]]}}
+      },
+      "Metadata" : {
+        "Comment" : "Pdfcombiner configuration",
+        "AWS::CloudFormation::Authentication" : {
+          "S3AccessCreds" : {
+            "type" : "S3",
+            "accessKeyId" : { "Ref" : "S3AccessKeyId" },
+            "secretKey" : { "Ref" : "S3SecretAccessKey" },
+            "buckets" : [ { "Ref" : "DeployBucket" } ]
+          }
+        },
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+            "ALL" : [ "DefaultSet" ]
+          },
+          "DefaultSet" : {
+            "files" : {
+              "/home/ubuntu/.pdfcombiner.json" : {
+                "content" : { "Fn::Join" : ["", [
+                  "{",
+                    "\"remote_user\":\"",     { "Ref" : "ListenUser" },       "\",",
+                    "\"remote_password\":\"", { "Ref" : "ListenPassword" },   "\",",
+                    "\"local_user\":\"",      { "Ref" : "TransmitUser" },     "\",",
+                    "\"local_password\":\"",  { "Ref" : "TransmitPassword" },
+                  "\"}\n"
+                ]]},
+                "mode"    : "000644",
+                "owner"   : "ubuntu",
+                "group"   : "ubuntu"
+              },
+              "/home/ubuntu/logrotate.conf" : {
+                "content" : { "Fn::Join" : ["\n", [
+                  "/home/ubuntu/pdfcombiner/*.log {",
+                  "  daily",
+                  "  missingok",
+                  "  copytruncate",
+                  "  rotate 30",
+                  "  compress",
+                  "  notifempty",
+                  "  nocreate",
+                  "}\n"
+                ]]},
+                "mode"    : "000644",
+                "owner"   : "ubuntu",
+                "group"   : "ubuntu"
+              },
+              "/etc/init/pdfcombiner.conf" : {
+                "content" : { "Fn::Join" : ["", [
+                  "start on runlevel [345]\n",
+                  "stop on runlevel [!345]\n",
+                  "chdir /home/ubuntu/pdfcombiner\n",
+                  "setgid ubuntu\n",
+                  "setuid ubuntu\n",
+                  "env HOME=/home/ubuntu\n",
+                  "env GOMAXPROCS=2\n",
+                  "env AWS_ACCESS_KEY_ID=", {"Ref" : "S3AccessKeyId"}, "\n",
+                  "env AWS_SECRET_ACCESS_KEY=", { "Ref" : "S3SecretAccessKey" }, "\n",
+                  "exec ./pdfcombiner -server >> pdfcombiner.log 2>&1\n"
+                ]]},
+                "mode"    : "000644",
+                "owner"   : "root",
+                "group"   : "root"
+              },
+              "/home/ubuntu/deploy-info" : {
+                "content" : { "Ref" : "DeployString" },
+                "mode"    : "000644",
+                "owner"   : "ubuntu",
+                "group"   : "ubuntu"
+              },
+              "/usr/local/bin/cpdf": {
+                "source" : { "Fn::Join" : ["", ["http://" , { "Ref" : "DeployBucket" }, ".s3.amazonaws.com/cpdf"]]},
+                "mode" : "000755",
+                "owner" : "root",
+                "group" : "root",
+                "authentication": "S3AccessCreds"
+              },
+              "/home/ubuntu/pdfcombiner/pdfcombiner": {
+                "source" : { "Fn::Join" : ["", ["http://" , { "Ref" : "DeployBucket" }, ".s3.amazonaws.com/pdfcombiner"]]},
+                "mode" : "000755",
+                "owner" : "ubuntu",
+                "group" : "ubuntu",
+                "authentication" : "S3AccessCreds"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "AppServerScaleUpPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "AppServerGroup" },
+        "Cooldown" : "60",
+        "ScalingAdjustment" : "1"
+      }
+    },
+    "AppServerScaleDownPolicy" : {
+      "Type" : "AWS::AutoScaling::ScalingPolicy",
+      "Properties" : {
+        "AdjustmentType" : "ChangeInCapacity",
+        "AutoScalingGroupName" : { "Ref" : "AppServerGroup" },
+        "Cooldown" : "60",
+        "ScalingAdjustment" : "-1"
+      }
+    },
+
+    "CPUAlarmHigh": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Scale-up if CPU > 80% for 3 minutes",
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/EC2",
+        "Statistic": "Average",
+        "Period": "60",
+        "EvaluationPeriods": "3",
+        "Threshold": "80",
+        "AlarmActions": [ { "Ref": "AppServerScaleUpPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": { "Ref": "AppServerGroup" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "CPUAlarmLow": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Scale-down if CPU < 60% for 10 minutes",
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/EC2",
+        "Statistic": "Average",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "60",
+        "AlarmActions": [ { "Ref": "AppServerScaleDownPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "AutoScalingGroupName",
+            "Value": { "Ref": "AppServerGroup" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
+    }
+  }
+}
