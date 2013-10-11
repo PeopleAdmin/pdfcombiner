@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# Change the desired EC2 instance size
 
 require_relative 'lib/deployer'
 require 'json'

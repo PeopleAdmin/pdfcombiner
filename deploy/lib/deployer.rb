@@ -49,13 +49,16 @@ module Deployer
     end
   end
 
-  private
-
   def self.deploy_instances
-    asg_id = CloudFormation.autoscaling_group_id
-    asg = AutoScalingGroup.new(asg_id)
-    asg.running_instance_ids
+    autoscaling_group.running_instance_ids
   end
+
+  def self.autoscaling_group
+    asg_id = CloudFormation.autoscaling_group_id
+    AutoScalingGroup.new(asg_id)
+  end
+
+  private
 
   def self.safe_to_update?
     case status = CloudFormation.stack['StackStatus']
@@ -73,7 +76,7 @@ module Deployer
   end
 
   def self.progress_message
-    url="https://console.aws.amazon.com/cloudformation/home?region=us-east-1"+
+    url="https://console.aws.amazon.com/cloudformation/?region=us-east-1"+
     "#ConsoleState:viewing=ACTIVE&stack=#{STACK_NAME}&tab=Events"
     "Check #{url} to monitor progress"
   end
@@ -108,17 +111,17 @@ module Deployer
         @stack ||= stack_with_name(STACK_NAME)
       end
 
+      def stack_resources
+        response = fog.describe_stack_resources('StackName' => STACK_NAME).body
+        response['StackResources']
+      end
+
       private
 
       def extract_params
         ->(memo, curr) {
           memo.merge( curr['ParameterKey'] => curr['ParameterValue'] )
         }
-      end
-
-      def stack_resources
-        response = fog.describe_stack_resources('StackName' => STACK_NAME).body
-        response['StackResources']
       end
 
       def template_contents
@@ -138,6 +141,15 @@ module Deployer
         @fog ||= Fog::AWS::CloudFormation.new(CREDS)
       end
 
+    end
+  end
+
+  class LoadBalancer
+    ELB_NAME = 'pdfcombiner'
+
+    def self.attributes
+      fog ||= Fog::AWS::ELB.new(CREDS)
+      fog.load_balancers.find{|x| x.id == 'pdfcombiner'}.attributes
     end
   end
 
@@ -165,6 +177,8 @@ module Deployer
   end
 
   class SshTool
+    attr_reader :running_instances
+
     DEPLOY_COMMANDS = [
       "sudo cfn-init -v -s #{STACK_NAME} -r LaunchConfig -c ALL",
       "sudo service pdfcombiner restart",
