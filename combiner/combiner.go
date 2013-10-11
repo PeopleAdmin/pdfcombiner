@@ -20,6 +20,7 @@ var downloadTimeout = 3 * time.Minute
 func Combine(j *job.Job) {
 	defer cleanup(j)
 	waitInQueue()
+	j.DequeuedAt = time.Now()
 	getAllFiles(j)
 	if !j.HasDownloadedDocs() {
 		return

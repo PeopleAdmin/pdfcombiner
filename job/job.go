@@ -31,6 +31,7 @@ type Job struct {
 	workingDirectory string
 	bucket           *s3.Bucket
 	receivedAt       time.Time
+	DequeuedAt       time.Time
 	DownloadsDoneAt  time.Time
 }
 

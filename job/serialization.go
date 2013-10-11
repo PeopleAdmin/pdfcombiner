@@ -20,6 +20,7 @@ type JobResponse struct {
 type metrics struct {
 	ReceivedAt   time.Time
 	DownloadTime time.Duration
+	QueueTime    time.Duration
 	TotalTime    time.Duration
 }
 
@@ -62,6 +63,7 @@ func errStrs(errors []error) (strings []string) {
 func newMetrics(j *Job) (m metrics) {
 	m.ReceivedAt = j.receivedAt
 	m.DownloadTime = j.DownloadsDoneAt.Sub(j.receivedAt)
+	m.QueueTime = j.DequeuedAt.Sub(j.receivedAt)
 	m.TotalTime = time.Since(j.receivedAt)
 	return
 }
