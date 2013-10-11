@@ -62,6 +62,16 @@
       "Description" : "A string used to identify the most recent deploy",
       "Type" : "String",
       "Default" : "Initial deploy"
+    },
+    "MinInstances" : {
+      "Description" : "The minimum number of instances to run at one time",
+      "Type" : "String",
+      "Default" : "2"
+    },
+    "MaxInstances" : {
+      "Description" : "The maximum number of instances to scale up to when load is high.",
+      "Type" : "String",
+      "Default" : "5"
     }
   },
 
@@ -78,8 +88,8 @@
       "Properties" : {
         "AvailabilityZones" : { "Fn::GetAZs" : ""},
         "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
-        "MinSize" : "2",
-        "MaxSize" : "5",
+        "MinSize" : { "Ref" : "MinInstances" },
+        "MaxSize" : { "Ref" : "MaxInstances" },
         "LoadBalancerNames" : [ { "Ref" : "LoadBalancer" } ],
         "Tags" : [
           {
