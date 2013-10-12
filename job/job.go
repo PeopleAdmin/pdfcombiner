@@ -120,8 +120,8 @@ func (j *Job) setup() (err error) {
 	j.Downloaded = make([]*Document, 0, len(j.DocList))
 	j.Errors = make([]error, 0, len(j.DocList))
 	j.setDocParents()
-	j.mkTmpDir()
 	j.mkUuid()
+	j.mkTmpDir()
 	return
 }
 

@@ -2,12 +2,10 @@ package job
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
-	"time"
 )
 
-var tmpDirPattern = "/tmp/pdfcombiner/%d/"
+var tmpDirPattern = "/tmp/pdfcombiner/%s/"
 
 func (j *Job) LocalPath() string {
 	return j.workingDirectory + "combined.pdf"
@@ -16,8 +14,7 @@ func (j *Job) LocalPath() string {
 // Make a randomized temporary directory to work in.
 // Panics if it can't be created, since we can't continue.
 func (j *Job) mkTmpDir() {
-	rand.Seed(time.Now().UnixNano())
-	j.workingDirectory = fmt.Sprintf(tmpDirPattern, rand.Int())
+	j.workingDirectory = fmt.Sprintf(tmpDirPattern, j.Id())
 	err := os.MkdirAll(j.workingDirectory, 0777)
 	if err != nil {
 		panic(err)
