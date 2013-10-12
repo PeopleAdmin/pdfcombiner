@@ -93,7 +93,8 @@ module Deployer
         new_params = current_params.merge(updated_params)
         fog.update_stack STACK_NAME,
           "TemplateBody" => template_contents,
-          "Parameters" => new_params
+          "Parameters" => new_params,
+          "Capabilities" => ["CAPABILITY_IAM"]
       end
 
       # Examine the stack to determine the associated autoscaling group id.

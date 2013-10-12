@@ -10,6 +10,7 @@ import (
 	"github.com/PeopleAdmin/pdfcombiner/job"
 	"github.com/PeopleAdmin/pdfcombiner/server"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
+	"github.com/PeopleAdmin/pdfcombiner/monitoring"
 	"launchpad.net/goamz/aws"
 	"os"
 )
@@ -41,6 +42,7 @@ func main() {
 	verifyAws()
 	switch {
 	case serverMode:
+		enableMonitoring()
 		daemon.Listen(port)
 		println("Shutdown complete")
 	default:
@@ -77,5 +79,11 @@ func verifyAws() {
 	_, err := aws.EnvAuth()
 	if err != nil {
 		panic(err)
+	}
+}
+
+func enableMonitoring() {
+	if os.Getenv("SEND_METRICS") != "" {
+		go monitoring.StartMetricSender()
 	}
 }

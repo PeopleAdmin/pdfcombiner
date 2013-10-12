@@ -9,6 +9,8 @@ var (
 	maxJobs        int32 = 15
 	jobCounter     int32 = 0
 	waitingCounter int32 = 0
+	jobsReceivedCount int32 = 0
+	jobsFinishedCount int32 = 0
 )
 
 func CurrentJobs() int32 {
@@ -17,6 +19,14 @@ func CurrentJobs() int32 {
 
 func CurrentWait() int32 {
 	return atomic.LoadInt32(&waitingCounter)
+}
+
+func TotalJobsReceived() int32 {
+	return atomic.LoadInt32(&jobsReceivedCount)
+}
+
+func TotalJobsFinished() int32 {
+	return atomic.LoadInt32(&jobsFinishedCount)
 }
 
 // restricts the maximum number of in-progress jobs to prevent the system from
@@ -31,6 +41,7 @@ func waitInQueue() {
 
 func addWaiter() {
 	atomic.AddInt32(&waitingCounter, 1)
+	atomic.AddInt32(&jobsReceivedCount, 1)
 }
 
 func startJob() {
@@ -40,6 +51,7 @@ func startJob() {
 
 func removeJob() {
 	atomic.AddInt32(&jobCounter, -1)
+	atomic.AddInt32(&jobsFinishedCount, 1)
 }
 
 func resetCounters() {
