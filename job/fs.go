@@ -3,18 +3,21 @@ package job
 import (
 	"fmt"
 	"os"
+	"time"
+	"strconv"
 )
 
-var tmpDirPattern = "/tmp/pdfcombiner/%s/"
+var tmpDirPattern = "/tmp/pdfcombiner/%s.%s/"
 
 func (j *Job) LocalPath() string {
 	return j.workingDirectory + "combined.pdf"
 }
 
-// Make a randomized temporary directory to work in.
-// Panics if it can't be created, since we can't continue.
+// Make a temporary directory to work in based on the job dir plus the current
+// time.  Panics if it can't be created, since we can't continue.
 func (j *Job) mkTmpDir() {
-	j.workingDirectory = fmt.Sprintf(tmpDirPattern, j.Id())
+	timeSuffix := strconv.FormatInt(time.Now().UnixNano(),10)[8:14]
+	j.workingDirectory = fmt.Sprintf(tmpDirPattern, j.Id(), timeSuffix)
 	err := os.MkdirAll(j.workingDirectory, 0777)
 	if err != nil {
 		panic(err)
