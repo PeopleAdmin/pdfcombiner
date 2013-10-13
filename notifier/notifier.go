@@ -21,6 +21,7 @@ type Notifiable interface {
 // SendNotification sends an HTTP message to the recipient with the job status.
 func SendNotification(n Notifiable) (response *http.Response, err error) {
 	response, err = deliver(n)
+	defer response.Body.Close()
 	if err != nil {
 		log.Println(n.Id(), "ERROR posting notification:", err)
 		return
