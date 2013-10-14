@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"fmt"
 	"github.com/crowdmob/goamz/cloudwatch"
 	"time"
 )
@@ -57,7 +56,6 @@ func (m *metricAggregator) Start() {
 		stats, allZero := newStatMetricDatum(m.metricName, buffer, m.unitName)
 
 		if shouldTransmitZero || !allZero {
-			fmt.Fprintln(logFile, "packaging", m.metricName, "batch:")
 			m.batchStream <- stats
 		}
 	}

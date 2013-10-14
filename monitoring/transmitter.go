@@ -18,7 +18,6 @@ func collectBatchesForDelivery(incomingBatches <-chan MetricDatum) {
 	for {
 		select {
 		case newStat = <-incomingBatches:
-			//fmt.Fprintln(logFile, "got MetricDatum for transmission: ", newStat)
 			buffer = append(buffer, newStat)
 		case <-time.After(1 * time.Second):
 		}
@@ -31,12 +30,10 @@ func collectBatchesForDelivery(incomingBatches <-chan MetricDatum) {
 }
 
 func sendToAws(metrics []MetricDatum) {
-	fmt.Fprintln(logFile, "current length is", len(metrics), metrics, "sending to amazon")
-	response, err := putData(cw, metrics)
+	_, err := putData(cw, metrics)
 	if err != nil {
 		log.Println("ERROR sending metrics to AWS:" + err.Error())
 	}
-	fmt.Fprintln(logFile, "response:", response)
 }
 
 func putData(c *CloudWatch, metrics []MetricDatum) (result *aws.BaseResponse, err error) {
@@ -72,7 +69,6 @@ func putData(c *CloudWatch, metrics []MetricDatum) (result *aws.BaseResponse, er
 			params[statprefix+".Sum"] = strconv.FormatFloat(stat.Sum, 'f', -1, 64)
 		}
 	}
-	fmt.Fprintln(logFile,"about to send", params)
 	result = new(aws.BaseResponse)
 	err = query(c, "POST", "/", params, result)
 	return

@@ -2,7 +2,6 @@
 package monitoring
 
 import (
-	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/combiner"
 	"github.com/crowdmob/goamz/aws"
 	. "github.com/crowdmob/goamz/cloudwatch"
@@ -20,12 +19,11 @@ const namespace = "pdfcombiner"
 var instanceId string
 var dimensions = []Dimension{}
 var cw *CloudWatch
-var logFile *os.File
 
 func StartMetricSender() {
-	logFile, _ = os.Create("statslog")
 	connect()
 	addStackToDimensions()
+	log.Println("Sending metrics to AWS every", metricTransmitInterval, "seconds.")
 
 	receiver := make(chan MetricDatum)
 	go collectBatchesForDelivery(receiver)
@@ -146,12 +144,10 @@ func sendCurrentCounts() {
 		queueLengthMetric(),
 		runningLengthMetric(),
 	}
-	fmt.Println(metrics)
-	response, err := cw.PutMetricData(metrics)
+	_ , err := cw.PutMetricData(metrics)
 	if err != nil {
 		log.Println("ERROR sending metrics to AWS:" + err.Error())
 	}
-	fmt.Println("response:", response)
 }
 
 func queueLengthMetric() MetricDatum {
@@ -168,7 +164,7 @@ func addInstanceIdToDimensions() (err error) {
 		instanceId = strings.Trim(string(content), "\n")
 		dimensions = append(dimensions, Dimension{Name: "InstanceId", Value: instanceId})
 	} else {
-		fmt.Fprintf(logFile, "Not able to get instanceid, ensure that", ubuntuIdFile, "exists")
+		log.Println("ERROR: Not able to get instanceid for monitoring, ensure that", ubuntuIdFile, "exists")
 	}
 	return
 }
@@ -178,7 +174,7 @@ func addStackToDimensions() {
 		dimensions = append(dimensions,
 			Dimension{Name: "StackName", Value: os.Getenv("STACK_NAME")})
 	} else {
-		fmt.Fprintf(logFile, "Not able to get stack name, ensure that $STACK_NAME is set.")
+		log.Printf("ERROR: Not able to get stack name, ensure that $STACK_NAME is set.")
 	}
 }
 
