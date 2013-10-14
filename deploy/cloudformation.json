@@ -288,7 +288,7 @@
       "Properties" : {
         "AdjustmentType" : "ChangeInCapacity",
         "AutoScalingGroupName" : { "Ref" : "AppServerGroup" },
-        "Cooldown" : "30",
+        "Cooldown" : "60",
         "ScalingAdjustment" : "1"
       }
     },
@@ -371,7 +371,7 @@
         "Statistic": "Maximum",
         "Period": "60",
         "EvaluationPeriods": "10",
-        "Threshold": "80",
+        "Threshold": "1000",
         "AlarmActions": [ { "Ref": "NotificationTopic" } ],
         "Dimensions": [
           {
