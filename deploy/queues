@@ -1,6 +1,17 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env ruby
+require_relative 'lib/deployer'
+require 'httparty'
 # Display the queue sizes of all instances
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+class QueueInspector
 
-$DIR/ssh "curl http://localhost:8080/status"
+  def self.inspect
+    instances = Deployer::SshTool.new(Deployer.deploy_instances).running_instances
+    responses = instances.map do |instance|
+      puts "#{instance.id} (#{instance.dns_name}): #{HTTParty.get("http://#{instance.dns_name}:8080/status").body}"
+    end
+  end
+
+end
+
+QueueInspector.inspect

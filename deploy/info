@@ -10,9 +10,20 @@ class Info
   end
 
   def run
-    display_queue_status
+    display_stack_status
     display_asg_status
     display_instance_data
+    display_queue_status
+  end
+
+  def display_stack_status
+    status = Deployer::CloudFormation.stack['StackStatus']
+    color = case status
+            when /IN_PROGRESS/ then "yellow"
+            when /COMPLETE/    then "green"
+            when /FAILED/      then "red"
+            end
+    Formatador.display_line("Stack status: [#{color}]#{Deployer::CloudFormation.stack['StackStatus']}[/]")
   end
 
   def display_lb_data

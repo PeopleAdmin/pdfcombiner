@@ -29,14 +29,6 @@
       "Type" : "String",
       "Default" : "pdfcombiner-elb"
     },
-    "S3AccessKeyId" : {
-      "Description" : "The AWS Access key to use against S3",
-      "Type" : "String"
-    },
-    "S3SecretAccessKey" : {
-      "Description" : "The AWS Secret Access key to use against S3",
-      "Type" : "String"
-    },
     "DeployBucket" : {
       "Description" : "The s3 bucket used to download the pdfcombiner binary and cpdf from.  It's expected to have files called pdfcombiner and cpdf in the bucket root.",
       "Type" : "String",
@@ -72,10 +64,66 @@
       "Description" : "The maximum number of instances to scale up to when load is high.",
       "Type" : "String",
       "Default" : "5"
+    },
+    "NotificationEmail" : {
+      "Description" : "Email to send event notifications / alerts to",
+      "Type" : "String"
     }
   },
 
   "Resources" : {
+    "NotificationTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "Subscription": [
+          {
+            "Endpoint": { "Ref": "NotificationEmail" },
+            "Protocol": "email"
+          }
+        ]
+      }
+    },
+
+    "AWSUser" : {
+      "Type" : "AWS::IAM::User",
+      "Properties" : {
+        "Path" : "/",
+        "Policies" : [
+          {
+            "PolicyName" : "CloudwatchAllowPut",
+            "PolicyDocument" : {
+              "Statement" : [
+                {
+                  "Effect" : "Allow",
+                  "Action" : "cloudwatch:PutMetricData",
+                  "Resource" : "*"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName" : "S3FullAccess",
+            "PolicyDocument" : {
+              "Statement" : [
+                {
+                  "Effect" : "Allow",
+                  "Action" : "s3:*",
+                  "Resource" : "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    "AWSKey" : {
+      "Type" : "AWS::IAM::AccessKey",
+      "Properties" : {
+        "UserName" : { "Ref" : "AWSUser" }
+      }
+    },
+
     "AppServerGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "UpdatePolicy" : {
@@ -86,11 +134,20 @@
         }
       },
       "Properties" : {
-        "AvailabilityZones" : { "Fn::GetAZs" : ""},
+        "AvailabilityZones" : ["us-east-1d", "us-east-1e", "us-east-1c"],
         "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
         "MinSize" : { "Ref" : "MinInstances" },
         "MaxSize" : { "Ref" : "MaxInstances" },
         "LoadBalancerNames" : [ { "Ref" : "LoadBalancer" } ],
+        "NotificationConfiguration" : {
+          "TopicARN" : { "Ref" : "NotificationTopic" },
+          "NotificationTypes" : [
+            "autoscaling:EC2_INSTANCE_LAUNCH",
+            "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+            "autoscaling:EC2_INSTANCE_TERMINATE",
+            "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+          ]
+        },
         "Tags" : [
           {
             "Key" : "Name",
@@ -112,7 +169,7 @@
           "#!/bin/bash -v\n\n",
 
           "# Set up crontab for logrotation\n",
-          "echo \"@daily logrotate -s /home/ubuntu/logrotate.state --force /home/ubuntu/logrotate.conf\" | crontab -u ubuntu -\n\n",
+          "echo \"0 0 * * * logrotate -s /home/ubuntu/logrotate.state --force /home/ubuntu/logrotate.conf\" | crontab -u ubuntu -\n\n",
 
           "# Run cloudformation bootstrap\n",
           "apt-get -y install python-setuptools\n",
@@ -121,6 +178,12 @@
           "         -s ", { "Ref" : "AWS::StackName" },
           "         -r LaunchConfig",
           "         -c ALL\n\n",
+
+          "# Make sure pdfcombiner's temp directory is in ramdisk\n",
+          "RAMDISK=/run/shm/pdfcombiner\n",
+          "TMPDIR=/tmp/pdfcombiner\n",
+          "[ -d $RAMDISK ] || mkdir -p -m 777 $RAMDISK\n",
+          "[ -d $TMPDIR ] || [ -L $TMPDIR ] || ln -s $RAMDISK $TMPDIR\n",
 
           "# Ensure all files in ~ubuntu owned by ubuntu\n",
           "find /home/ubuntu/ | xargs chown ubuntu:ubuntu\n\n",
@@ -134,8 +197,8 @@
         "AWS::CloudFormation::Authentication" : {
           "S3AccessCreds" : {
             "type" : "S3",
-            "accessKeyId" : { "Ref" : "S3AccessKeyId" },
-            "secretKey" : { "Ref" : "S3SecretAccessKey" },
+            "accessKeyId" : { "Ref" : "AWSKey" },
+            "secretKey" : { "Fn::GetAtt" : ["AWSKey", "SecretAccessKey"] },
             "buckets" : [ { "Ref" : "DeployBucket" } ]
           }
         },
@@ -178,13 +241,16 @@
                 "content" : { "Fn::Join" : ["", [
                   "start on runlevel [345]\n",
                   "stop on runlevel [!345]\n",
+                  "kill timeout 300\n",
                   "chdir /home/ubuntu/pdfcombiner\n",
                   "setgid ubuntu\n",
                   "setuid ubuntu\n",
                   "env HOME=/home/ubuntu\n",
                   "env GOMAXPROCS=2\n",
-                  "env AWS_ACCESS_KEY_ID=", {"Ref" : "S3AccessKeyId"}, "\n",
-                  "env AWS_SECRET_ACCESS_KEY=", { "Ref" : "S3SecretAccessKey" }, "\n",
+                  "env AWS_ACCESS_KEY_ID=", { "Ref" : "AWSKey" }, "\n",
+                  "env AWS_SECRET_ACCESS_KEY=", { "Fn::GetAtt" : ["AWSKey", "SecretAccessKey"] }, "\n",
+                  "env STACK_NAME=", { "Ref" : "AWS::StackName" }, "\n",
+                  "env SEND_METRICS=true\n",
                   "exec ./pdfcombiner -server >> pdfcombiner.log 2>&1\n"
                 ]]},
                 "mode"    : "000644",
@@ -222,7 +288,7 @@
       "Properties" : {
         "AdjustmentType" : "ChangeInCapacity",
         "AutoScalingGroupName" : { "Ref" : "AppServerGroup" },
-        "Cooldown" : "60",
+        "Cooldown" : "300",
         "ScalingAdjustment" : "1"
       }
     },
@@ -231,22 +297,62 @@
       "Properties" : {
         "AdjustmentType" : "ChangeInCapacity",
         "AutoScalingGroupName" : { "Ref" : "AppServerGroup" },
-        "Cooldown" : "60",
+        "Cooldown" : "300",
         "ScalingAdjustment" : "-1"
       }
     },
 
-    "CPUAlarmHigh": {
+    "QueueHighScaleUp": {
      "Type": "AWS::CloudWatch::Alarm",
      "Properties": {
-        "AlarmDescription": "Scale-up if CPU > 80% for 3 minutes",
+        "AlarmDescription": "Scale-up if any queue > 100 for 1 minute",
+        "MetricName": "JobsWaiting",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Maximum",
+        "Period": "60",
+        "EvaluationPeriods": "1",
+        "Threshold": "100",
+        "AlarmActions": [ { "Ref": "AppServerScaleUpPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "QueueLowScaleDown": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Scale-down if all queues < 10 for 10 minutes",
+        "MetricName": "JobsWaiting",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Maximum",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "10",
+        "AlarmActions": [ { "Ref": "AppServerScaleDownPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
+    },
+    "HighCPUNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Warn if CPU > 80% for 10 minutes",
         "MetricName": "CPUUtilization",
         "Namespace": "AWS/EC2",
         "Statistic": "Average",
         "Period": "60",
-        "EvaluationPeriods": "3",
+        "EvaluationPeriods": "10",
         "Threshold": "80",
-        "AlarmActions": [ { "Ref": "AppServerScaleUpPolicy" } ],
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
         "Dimensions": [
           {
             "Name": "AutoScalingGroupName",
@@ -256,21 +362,121 @@
         "ComparisonOperator": "GreaterThanThreshold"
       }
     },
-    "CPUAlarmLow": {
+    "HighExcessNotification": {
      "Type": "AWS::CloudWatch::Alarm",
      "Properties": {
-        "AlarmDescription": "Scale-down if CPU < 60% for 10 minutes",
-        "MetricName": "CPUUtilization",
-        "Namespace": "AWS/EC2",
+        "AlarmDescription": "Way more requests are being received than processed",
+        "MetricName": "ExcessRequestsPerMinute",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Maximum",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "1000",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "HighProcessedNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Send an email if finished throughput is very high",
+        "MetricName": "RequestsFinishedPerMinute",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Maximum",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "1000",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "HighReceivedNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Send an email if received throughput is very high",
+        "MetricName": "RequestsReceivedPerMinute",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Maximum",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "1000",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "DiskFreeNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Send an email if any instance's disk space is below 1GB",
+        "MetricName": "DiskFree",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Minimum",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "1024",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
+    },
+    "MemFreeNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Send an email if any instance's free memory is below 512MB",
+        "MetricName": "MemFree",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Minimum",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "512",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
+    },
+    "ELBUnhealthyNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Send an email if the pdfcombiner ELB has no healthy hosts for 10 minutes",
+        "MetricName": "HealthyHostCount",
+        "Namespace": "AWS/ELB",
         "Statistic": "Average",
         "Period": "60",
         "EvaluationPeriods": "10",
-        "Threshold": "60",
-        "AlarmActions": [ { "Ref": "AppServerScaleDownPolicy" } ],
+        "Threshold": "1",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
         "Dimensions": [
           {
-            "Name": "AutoScalingGroupName",
-            "Value": { "Ref": "AppServerGroup" }
+            "Name": "LoadBalancerName",
+            "Value": { "Ref": "LoadBalancer" }
           }
         ],
         "ComparisonOperator": "LessThanThreshold"

@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
+	"time"
 )
 
 // A CombinerServer needs a port to listen on and a WaitGroup to keep
@@ -28,6 +29,7 @@ type CombinerServer struct {
 var invalidMessage = []byte("{\"response\":\"invalid params\"}\n")
 var okMessage = []byte("{\"response\":\"ok\"}\n")
 var host, _ = os.Hostname()
+var launchTime = time.Now()
 
 // Listen starts a HTTP server listening on `Port` to respond to
 // JSON-formatted combination requests.
@@ -38,10 +40,10 @@ func (c CombinerServer) Listen(listenPort int) {
 	if err != nil {
 		panic(err)
 	}
-	println("Accepting connections on " + c.portString())
+	log.Println("Accepting connections on " + c.portString())
 	c.registerHandlers(listener)
 	http.Serve(listener, http.DefaultServeMux)
-	println("Waiting for all jobs to finish...")
+	log.Println("Waiting for all jobs to finish...")
 	c.pending.Wait()
 }
 
@@ -54,7 +56,7 @@ func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if !authenticate(w,r) {
+	if !authenticate(w, r) {
 		return
 	}
 	j, err := job.NewFromJSON(r.Body)
@@ -81,10 +83,14 @@ func (c CombinerServer) Ping(w http.ResponseWriter, r *http.Request) {
 func (c CombinerServer) Status(w http.ResponseWriter, r *http.Request) {
 	log.Println(requestInfo(r))
 	w.Header().Set("Content-Type", "application/json")
-	template := `{"host": "%s", "running": %d, "waiting": %d}` + "\n"
+	template := `{"host": "%s", "running": %d, "waiting": %d, "total_received": %d, "uptime_minutes": %d }` + "\n"
 	jobs := fmt.Sprintf(template,
-		host, combiner.CurrentJobs(), combiner.CurrentWait())
+		host, combiner.CurrentJobs(), combiner.CurrentWait(), combiner.TotalJobsReceived(), uptime())
 	w.Write([]byte(jobs))
+}
+
+func uptime() int {
+	return int(time.Since(launchTime).Minutes())
 }
 
 func logJobReceipt(r *http.Request, j *job.Job) {
