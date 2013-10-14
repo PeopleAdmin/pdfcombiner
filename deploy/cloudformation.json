@@ -375,8 +375,8 @@
         "AlarmActions": [ { "Ref": "NotificationTopic" } ],
         "Dimensions": [
           {
-            "Name": "AutoScalingGroupName",
-            "Value": { "Ref": "AppServerGroup" }
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
           }
         ],
         "ComparisonOperator": "GreaterThanThreshold"
