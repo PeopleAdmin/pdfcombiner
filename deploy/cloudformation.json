@@ -421,6 +421,66 @@
         ],
         "ComparisonOperator": "GreaterThanThreshold"
       }
+    },
+    "DiskFreeNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Send an email if any instance's disk space is below 1GB",
+        "MetricName": "DiskFree",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Minimum",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "1024",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
+    },
+    "MemFreeNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Send an email if any instance's free memory is below 512MB",
+        "MetricName": "MemFree",
+        "Namespace": "pdfcombiner",
+        "Statistic": "Minimum",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "512",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
+    },
+    "ELBUnhealthyNotification": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Send an email if the pdfcombiner ELB has no healthy hosts for 10 minutes",
+        "MetricName": "HealthyHostCount",
+        "Namespace": "AWS/ELB",
+        "Statistic": "Average",
+        "Period": "60",
+        "EvaluationPeriods": "10",
+        "Threshold": "1",
+        "AlarmActions": [ { "Ref": "NotificationTopic" } ],
+        "Dimensions": [
+          {
+            "Name": "LoadBalancerName",
+            "Value": { "Ref": "LoadBalancer" }
+          }
+        ],
+        "ComparisonOperator": "LessThanThreshold"
+      }
     }
   }
 }

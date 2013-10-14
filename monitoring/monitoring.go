@@ -30,27 +30,31 @@ func StartMetricSender() {
 	receiver := make(chan MetricDatum)
 	go collectBatchesForDelivery(receiver)
 
-	go NewAggregator("JobsWaiting", receiver, 1,
+	go NewAggregator("JobsWaiting", receiver, 1, "Count",
 		func() float64 {
 			return float64(combiner.CurrentWait())
 		}).Start()
 
-	go NewAggregator("JobsRunning", receiver, 1,
+	go NewAggregator("JobsRunning", receiver, 1, "Count",
 		func() float64 {
 			return float64(combiner.CurrentJobs())
 		}).Start()
 
-	go NewAggregator("RequestsReceivedPerMinute", receiver, 60,
+	go NewAggregator("RequestsReceivedPerMinute", receiver, 60, "Count",
 		DeltaSinceLastCall(func() float64 {
 			return float64(combiner.TotalJobsReceived())
 		})).Start()
 
-	go NewAggregator("RequestsFinishedPerMinute", receiver, 60,
+	go NewAggregator("RequestsFinishedPerMinute", receiver, 60, "Count",
 		DeltaSinceLastCall(func() float64 {
 			return float64(combiner.TotalJobsFinished())
 		})).Start()
 
-	go NewAggregator("ExcessRequestsPerMinute", receiver, 60, excessJobsMetric()).Start()
+	go NewAggregator("ExcessRequestsPerMinute", receiver, 60, "Count", excessJobsMetric()).Start()
+
+	// System metrics
+	go NewAggregator("DiskFree", receiver, 60, "Megabytes", RootPartitionFreeMb()).Start()
+	go NewAggregator("MemFree", receiver, 60, "Megabytes", FreeMemoryMb()).Start()
 }
 
 // A generator that when called return the net number of jobs proccessed since
@@ -84,13 +88,13 @@ func DeltaSinceLastCall(getter func() float64) (generator func() float64) {
 }
 
 // Create a new MetricDatum representing statistics about several observations.
-func newStatMetricDatum(name string, observations []float64) (stats MetricDatum, allZero bool) {
+func newStatMetricDatum(name string, observations []float64, unitName string) (stats MetricDatum, allZero bool) {
 	allZero, min, max, sum := calculateStats(observations)
 	stats = MetricDatum{
 		MetricName: name,
 		Dimensions: dimensions,
 		Timestamp:  time.Now(),
-		Unit:       "Count",
+		Unit:       unitName,
 		StatisticValues: []StatisticSet{
 			StatisticSet{
 				Maximum:     max,
@@ -164,7 +168,7 @@ func addInstanceIdToDimensions() (err error) {
 		instanceId = strings.Trim(string(content), "\n")
 		dimensions = append(dimensions, Dimension{Name: "InstanceId", Value: instanceId})
 	} else {
-		fmt.Fprintf(logFile, "Not able to get instanceid, ensure that",ubuntuIdFile,"exists")
+		fmt.Fprintf(logFile, "Not able to get instanceid, ensure that", ubuntuIdFile, "exists")
 	}
 	return
 }

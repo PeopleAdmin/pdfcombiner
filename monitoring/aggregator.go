@@ -21,6 +21,7 @@ type metricAggregator struct {
 	get             func() float64
 	metricStream    chan float64
 	batchStream     chan cloudwatch.MetricDatum
+	unitName        string
 }
 
 // NewAggregator returns a metricAggregator instance.
@@ -28,6 +29,7 @@ func NewAggregator(
 	name string,
 	sender chan cloudwatch.MetricDatum,
 	interval time.Duration,
+	unit string,
 	getter func() float64) *metricAggregator {
 
 	return &metricAggregator{
@@ -36,6 +38,7 @@ func NewAggregator(
 		get:             getter,
 		metricStream:    make(chan float64),
 		batchStream:     sender,
+		unitName:        unit,
 	}
 }
 
@@ -51,7 +54,7 @@ func (m *metricAggregator) Start() {
 		for i := 0; i < bufferLen; i++ {
 			buffer[i] = <-m.metricStream
 		}
-		stats, allZero := newStatMetricDatum(m.metricName, buffer)
+		stats, allZero := newStatMetricDatum(m.metricName, buffer, m.unitName)
 
 		if shouldTransmitZero || !allZero {
 			fmt.Fprintln(logFile, "packaging", m.metricName, "batch:")
