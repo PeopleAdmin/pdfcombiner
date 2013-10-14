@@ -288,7 +288,7 @@
       "Properties" : {
         "AdjustmentType" : "ChangeInCapacity",
         "AutoScalingGroupName" : { "Ref" : "AppServerGroup" },
-        "Cooldown" : "60",
+        "Cooldown" : "300",
         "ScalingAdjustment" : "1"
       }
     },
@@ -297,7 +297,7 @@
       "Properties" : {
         "AdjustmentType" : "ChangeInCapacity",
         "AutoScalingGroupName" : { "Ref" : "AppServerGroup" },
-        "Cooldown" : "120",
+        "Cooldown" : "300",
         "ScalingAdjustment" : "-1"
       }
     },
