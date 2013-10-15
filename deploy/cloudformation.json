@@ -169,7 +169,7 @@
           "#!/bin/bash -v\n\n",
 
           "# Set up crontab for logrotation\n",
-          "echo \"0 0 * * * logrotate -s /home/ubuntu/logrotate.state --force /home/ubuntu/logrotate.conf\" | crontab -u ubuntu -\n\n",
+          "echo \"@daily /usr/sbin/logrotate -s /home/ubuntu/logrotate.state --force /home/ubuntu/logrotate.conf\" | crontab -u ubuntu -\n\n",
 
           "# Run cloudformation bootstrap\n",
           "apt-get -y install python-setuptools\n",
