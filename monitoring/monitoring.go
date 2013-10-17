@@ -10,6 +10,7 @@ import (
 
 func StartMetricSender() {
 	addStackToDimensions()
+	gomon.Namespace = "pdfcombiner"
 
 	// App metrics
 	gomon.RegisterInt("JobsWaiting", 1, "Count", combiner.CurrentWait)
