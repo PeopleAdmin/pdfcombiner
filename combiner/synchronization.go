@@ -6,27 +6,27 @@ import (
 )
 
 var (
-	maxJobs        int32 = 15
+	maxJobs        int = 15
 	jobCounter     int32 = 0
 	waitingCounter int32 = 0
 	jobsReceivedCount int32 = 0
 	jobsFinishedCount int32 = 0
 )
 
-func CurrentJobs() int32 {
-	return atomic.LoadInt32(&jobCounter)
+func CurrentJobs() int {
+	return int(atomic.LoadInt32(&jobCounter))
 }
 
-func CurrentWait() int32 {
-	return atomic.LoadInt32(&waitingCounter)
+func CurrentWait() int {
+	return int(atomic.LoadInt32(&waitingCounter))
 }
 
-func TotalJobsReceived() int32 {
-	return atomic.LoadInt32(&jobsReceivedCount)
+func TotalJobsReceived() int {
+	return int(atomic.LoadInt32(&jobsReceivedCount))
 }
 
-func TotalJobsFinished() int32 {
-	return atomic.LoadInt32(&jobsFinishedCount)
+func TotalJobsFinished() int {
+	return int(atomic.LoadInt32(&jobsFinishedCount))
 }
 
 // restricts the maximum number of in-progress jobs to prevent the system from
