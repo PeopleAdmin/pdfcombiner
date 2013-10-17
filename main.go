@@ -8,9 +8,9 @@ import (
 	"flag"
 	"github.com/PeopleAdmin/pdfcombiner/combiner"
 	"github.com/PeopleAdmin/pdfcombiner/job"
+	"github.com/PeopleAdmin/pdfcombiner/monitoring"
 	"github.com/PeopleAdmin/pdfcombiner/server"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
-	"github.com/PeopleAdmin/pdfcombiner/monitoring"
 	"launchpad.net/goamz/aws"
 	"os"
 )
@@ -84,6 +84,6 @@ func verifyAws() {
 
 func enableMonitoring() {
 	if os.Getenv("SEND_METRICS") != "" {
-		go monitoring.StartMetricSender()
+		monitoring.StartMetricSender()
 	}
 }
