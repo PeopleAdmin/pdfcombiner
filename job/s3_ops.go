@@ -2,11 +2,12 @@ package job
 
 import (
 	"fmt"
-	"log"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"io/ioutil"
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
+	"log"
+	"os"
 )
 
 var (
@@ -56,7 +57,8 @@ func (j *Job) UploadCombinedFile() (err error) {
 func (j *Job) connect() (err error) {
 	auth, err := aws.EnvAuth()
 	if err != nil {
-		return
+		println("S3 connect failed due to auth issues, exiting!")
+		os.Exit(1)
 	}
 	s := s3.New(auth, awsRegion)
 	j.bucket = s.Bucket(j.BucketName)
