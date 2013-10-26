@@ -43,7 +43,8 @@ func New(bucket string, docs []string) (newJob *Job, err error) {
 		BucketName: bucket,
 	}
 	newJob.DocList = docsFromStrings(docs)
-	err = newJob.setup()
+	newJob.mkUuid()
+	err = newJob.Setup()
 	return
 }
 
@@ -114,13 +115,12 @@ func (j *Job) Dir() string {
 }
 
 // Initialize the fields which don't have usable zero-values.
-func (j *Job) setup() (err error) {
+func (j *Job) Setup() (err error) {
 	j.receivedAt = time.Now()
 	err = j.s3Connect()
 	j.Downloaded = make([]*Document, 0, len(j.DocList))
 	j.Errors = make([]error, 0, len(j.DocList))
 	j.setDocParents()
-	j.mkUuid()
 	j.mkTmpDir()
 	return
 }

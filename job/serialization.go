@@ -26,9 +26,9 @@ type metrics struct {
 
 // NewFromJSON constructs a Job from an io.Reader containing JSON
 // conforming to the required portion of the Job schema.
-func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
+func NewFromJSON(encoded []byte) (newJob *Job, err error) {
 	newJob = &Job{}
-	err = json.NewDecoder(encoded).Decode(newJob)
+	err = json.NewDecoder(bytes.NewReader(encoded)).Decode(newJob)
 	if err != nil {
 		return
 	}
@@ -36,7 +36,6 @@ func NewFromJSON(encoded io.Reader) (newJob *Job, err error) {
 		err = errors.New("missing required fields")
 		return
 	}
-	err = newJob.setup()
 	return
 }
 

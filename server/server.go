@@ -59,19 +59,13 @@ func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 	if !authenticate(w, r) {
 		return
 	}
-	j, err := job.NewFromJSON(r.Body)
-	logJobReceipt(r, j)
+	j, err := dispatchNewJob(r, c)
 	if err != nil || !j.IsValid() {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(invalidMessage)
 		return
 	}
 	w.Write(okMessage)
-	c.registerWorker()
-	go func() {
-		defer c.unregisterWorker()
-		combiner.Combine(j)
-	}()
 }
 
 // Ping is no-op handler for responding to things like health checks.
