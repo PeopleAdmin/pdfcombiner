@@ -13,17 +13,17 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"sync"
 	"syscall"
 	"time"
 )
+
+const ShutdownTimeout = 1 * time.Minute
 
 // A CombinerServer needs a port to listen on and a WaitGroup to keep
 // track of how many background jobs it has spawned that have not yet
 // yet completed their work.
 type CombinerServer struct {
-	port    int
-	pending *sync.WaitGroup
+	port int
 }
 
 var invalidMessage = []byte("{\"response\":\"invalid params\"}\n")
@@ -35,7 +35,6 @@ var launchTime = time.Now()
 // JSON-formatted combination requests.
 func (c CombinerServer) Listen(listenPort int) {
 	c.port = listenPort
-	c.pending = new(sync.WaitGroup)
 	listener, err := net.Listen("tcp", c.portString())
 	if err != nil {
 		panic(err)
@@ -44,7 +43,7 @@ func (c CombinerServer) Listen(listenPort int) {
 	c.registerHandlers(listener)
 	http.Serve(listener, http.DefaultServeMux)
 	log.Println("Waiting for all jobs to finish...")
-	c.pending.Wait()
+	waitForJobs()
 }
 
 // ProcessJob is a handler to recieve a JSON body encoding a Job.  If
@@ -100,16 +99,6 @@ func (c CombinerServer) portString() string {
 	return ":" + strconv.Itoa(c.port)
 }
 
-// registerWorker increments the count of in-progress jobs
-func (c CombinerServer) registerWorker() {
-	c.pending.Add(1)
-}
-
-// workerDone decrements the count of in-progress jobs.
-func (c CombinerServer) unregisterWorker() {
-	c.pending.Done()
-}
-
 func (c CombinerServer) registerHandlers(listener net.Listener) {
 	http.HandleFunc("/health_check", c.Ping)
 	http.HandleFunc("/status", c.Status)
@@ -128,4 +117,21 @@ func handleSignals(listener net.Listener) {
 			listener.Close()
 		}
 	}()
+}
+
+func waitForJobs() {
+	a := make(chan time.Time)
+	go func(b chan<- time.Time) {
+		for {
+			if combiner.SafeToQuit() {
+				b <- time.Now()
+				break
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+	}(a)
+	select {
+	case <-a:
+	case <-time.After(ShutdownTimeout):
+	}
 }

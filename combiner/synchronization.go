@@ -58,3 +58,7 @@ func resetCounters() {
 	atomic.StoreInt32(&jobCounter, 0)
 	atomic.StoreInt32(&waitingCounter, 0)
 }
+
+func SafeToQuit() bool {
+	return CurrentWait() < 1 && CurrentJobs() < 1
+}

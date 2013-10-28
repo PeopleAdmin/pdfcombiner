@@ -58,11 +58,7 @@ func dispatchNewJob(r *http.Request, c CombinerServer) (j *job.Job, err error) {
 
 func executeNow(c CombinerServer, j *job.Job) {
 	j.Setup()
-	go func() {
-		defer c.unregisterWorker()
-		c.registerWorker()
-		combiner.Combine(j)
-	}()
+	go combiner.Combine(j)
 }
 
 func startSqsSender(incoming <-chan sqs.Message) {
