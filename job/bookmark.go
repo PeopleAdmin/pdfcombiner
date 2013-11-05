@@ -18,9 +18,21 @@ type Bookmark struct {
 }
 
 func (doc *Document) GetMetadata(cmd cpdf.InfoCmd) (err error) {
+	err = cmd.Validate()
+	if err != nil {
+		doc.parent.AddError(fmt.Errorf("Validating %v: %v", doc.Key, err))
+		return
+	}
 	doc.PageCount, err = cmd.PageCount()
-	if err != nil { return }
+	if err != nil {
+		doc.parent.AddError(fmt.Errorf("Counting Pages for %v: %v", doc.Key, err))
+		return
+	}
 	doc.Bookmarks, err = ExtractBookmarks(cmd)
+	if err != nil {
+		doc.parent.AddError(fmt.Errorf("Extracting Bookmarks for %v: %v", doc.Key, err))
+		return
+	}
 	return
 }
 

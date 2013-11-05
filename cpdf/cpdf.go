@@ -16,6 +16,7 @@ var cpdfbin = cpdfPath()
 type InfoCmd interface {
 	ListBookmarks() ([]byte, error)
 	PageCount() (int, error)
+	Validate() error
 }
 
 type ManipulatorCmd interface {
@@ -39,6 +40,14 @@ func New(filePath string, id string) (c *Cpdf) {
 func (c *Cpdf) ListBookmarks() (out []byte, err error) {
 	c.setArgs("-list-bookmarks", c.File)
 	return c.run()
+}
+
+// Validate checks whether the file can be processed by cpdf.  In particular,
+// it should catch encrypted documents before they get to the combine phase.
+func (c *Cpdf) Validate() (err error) {
+	c.setArgs("-i", c.File)
+	_, err = c.run()
+	return
 }
 
 // PageCount returns the number of pages in the document.
