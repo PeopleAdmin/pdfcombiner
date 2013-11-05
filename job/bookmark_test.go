@@ -1,6 +1,7 @@
 package job
 
 import (
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -39,6 +40,10 @@ func (o *erroringOutputter) ListBookmarks() (out []byte, err error) {
 	err = fmt.Errorf("ListBookmarks() threw an error!")
 	return
 }
+
+func (o *invalidOutputter) Validate() error  { return errors.New("") }
+func (o *validOutputter) Validate() error    { return errors.New("") }
+func (o *erroringOutputter) Validate() error { return errors.New("") }
 
 func TestParsesInvalidBookmarks(t *testing.T) {
 	bookmarks, _ := ExtractBookmarks(&invalidOutputter{})
