@@ -22,8 +22,12 @@ type Notifiable interface {
 func SendNotification(n Notifiable) (response *http.Response, err error) {
 	response, err = deliver(n)
 	if err != nil {
-		log.Println(n.Id(), "ERROR posting notification:", err)
-		return
+		log.Println(n.Id(), "ERROR posting notification, retrying once:", err)
+		response, err = deliver(n)
+		if err != nil {
+			log.Println(n.Id(), "ERROR posting notification, aborting:", err)
+			return
+		}
 	}
 	defer response.Body.Close()
 	logResponse(n, response)
