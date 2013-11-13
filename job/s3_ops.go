@@ -41,12 +41,12 @@ func (j *Job) UploadCombinedFile() (err error) {
 	}
 	content, err := ioutil.ReadFile(j.LocalPath())
 	if err != nil || len(content) == 0 {
-		j.AddError(fmt.Errorf("Reading file '%v' for upload: %v", j.LocalPath(), err))
+		j.AddError(fmt.Errorf("reading file '%v' for upload: %v", j.LocalPath(), err))
 		return
 	}
 	err = j.bucket.Put(j.CombinedKey, content, "application/pdf", uploadedFilePermission)
 	if err != nil {
-		j.AddError(fmt.Errorf("Uploading to S3 key '%s': %v", j.CombinedKey, err))
+		j.AddError(fmt.Errorf("uploading to S3 key '%s': %v", j.CombinedKey, err))
 		return
 	}
 	j.uploadComplete = true

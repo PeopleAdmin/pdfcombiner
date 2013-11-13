@@ -37,7 +37,7 @@ func (o *invalidOutputter) ListBookmarks() (out []byte, err error) {
 	return
 }
 func (o *erroringOutputter) ListBookmarks() (out []byte, err error) {
-	err = fmt.Errorf("ListBookmarks() threw an error!")
+	err = fmt.Errorf("ListBookmarks() threw an error")
 	return
 }
 

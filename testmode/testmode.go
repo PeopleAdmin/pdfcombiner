@@ -13,7 +13,7 @@ var notForced = 0
 var forcedTrue = 1
 var forcedFalse = 2
 
-var forceToggle os.Signal = syscall.SIGUSR1
+var forceToggle = syscall.SIGUSR1
 
 func SetupSignals() {
 	sigs := make(chan os.Signal, 1)

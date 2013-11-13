@@ -6,11 +6,11 @@ import (
 )
 
 var (
-	maxJobs           int   = 15
-	jobCounter        int32 = 0
-	waitingCounter    int32 = 0
-	jobsReceivedCount int32 = 0
-	jobsFinishedCount int32 = 0
+	maxJobs           = 15
+	jobCounter        int32
+	waitingCounter    int32
+	jobsReceivedCount int32
+	jobsFinishedCount int32
 )
 
 func CurrentJobs() int {
