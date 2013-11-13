@@ -13,10 +13,10 @@ var validCpdfOutput = `0 "Bookmark One" 1
 0 "Bad chars in title: \" 123" 4
 `
 var expectedParseOutput = []Bookmark{
-	Bookmark{0, "Bookmark One", 1},
-	Bookmark{0, "Bookmark Two", 2},
-	Bookmark{1, "Nested under Two", 3},
-	Bookmark{0, `Bad chars in title: \" 123`, 4},
+	{0, "Bookmark One", 1},
+	{0, "Bookmark Two", 2},
+	{1, "Nested under Two", 3},
+	{0, `Bad chars in title: \" 123`, 4},
 }
 
 // Set up serveral mock varities of the cpdf.InfoCmd type.

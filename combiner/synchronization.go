@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	maxJobs        int = 15
-	jobCounter     int32 = 0
-	waitingCounter int32 = 0
+	maxJobs           int   = 15
+	jobCounter        int32 = 0
+	waitingCounter    int32 = 0
 	jobsReceivedCount int32 = 0
 	jobsFinishedCount int32 = 0
 )

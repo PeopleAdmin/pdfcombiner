@@ -37,7 +37,9 @@ func TestAtomicAccess(t *testing.T) {
 			done <- true
 		}(responses)
 	}
-	for i := 0; i < 1000; i++ { <-responses }
+	for i := 0; i < 1000; i++ {
+		<-responses
+	}
 	assert.Equal(t, CurrentJobs(), 0)
 	assert.Equal(t, CurrentWait(), 0)
 }

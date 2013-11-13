@@ -10,8 +10,8 @@ const settingsFile = ".pdfcombiner.json"
 
 type configfile struct {
 	// Credentials to secure incoming connections
-	ListenUser   string `json:"remote_user"`
-	ListenPass   string `json:"remote_password"`
+	ListenUser string `json:"remote_user"`
+	ListenPass string `json:"remote_password"`
 	// Credentials to secure outgoing connections
 	TransmitUser string `json:"local_user"`
 	TransmitPass string `json:"local_password"`

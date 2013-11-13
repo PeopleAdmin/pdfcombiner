@@ -1,24 +1,24 @@
 package job
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"fmt"
 )
 
 var orig = BookmarkList{
 	[]Bookmark{
-		Bookmark{0, "1", 1},
-		Bookmark{1, "1.a", 2},
-		Bookmark{1, "1.b", 3},
+		{0, "1", 1},
+		{1, "1.a", 2},
+		{1, "1.b", 3},
 	},
 }
 
 var other = BookmarkList{
 	[]Bookmark{
-		Bookmark{0, "1", 2},
-		Bookmark{1, "1.a", 3},
-		Bookmark{1, "1.b", 4},
+		{0, "1", 2},
+		{1, "1.a", 3},
+		{1, "1.b", 4},
 	},
 }
 
@@ -31,10 +31,10 @@ func TestBookmarkListInCombinedContext(t *testing.T) {
 		orig.InCombinedContext("Doc Title", 5),
 		BookmarkList{
 			[]Bookmark{
-				Bookmark{0, "Doc Title", 5},
-				Bookmark{1, "1", 5},
-				Bookmark{2, "1.a", 6},
-				Bookmark{2, "1.b", 7},
+				{0, "Doc Title", 5},
+				{1, "1", 5},
+				{2, "1.a", 6},
+				{2, "1.b", 7},
 			},
 		})
 }
@@ -44,10 +44,10 @@ func TestAlternateBookmarkListInCombinedContext(t *testing.T) {
 		other.InCombinedContext("Doc Title", 9),
 		BookmarkList{
 			[]Bookmark{
-				Bookmark{0, "Doc Title", 9},
-				Bookmark{1, "1", 10},
-				Bookmark{2, "1.a", 11},
-				Bookmark{2, "1.b", 12},
+				{0, "Doc Title", 9},
+				{1, "1", 10},
+				{2, "1.a", 11},
+				{2, "1.b", 12},
 			},
 		})
 }
@@ -57,7 +57,7 @@ func TestEmptyBookmarkListInCombinedContext(t *testing.T) {
 		empty.InCombinedContext("Doc Title", 3),
 		BookmarkList{
 			[]Bookmark{
-				Bookmark{0, "Doc Title", 3},
+				{0, "Doc Title", 3},
 			},
 		})
 }

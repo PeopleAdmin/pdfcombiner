@@ -3,8 +3,8 @@ package job
 import (
 	"fmt"
 	"os"
-	"time"
 	"strconv"
+	"time"
 )
 
 var tmpDirPattern = "/tmp/pdfcombiner/%s.%s/"
@@ -16,7 +16,7 @@ func (j *Job) LocalPath() string {
 // Make a temporary directory to work in based on the job dir plus the current
 // time.  Panics if it can't be created, since we can't continue.
 func (j *Job) mkTmpDir() {
-	timeSuffix := strconv.FormatInt(time.Now().UnixNano(),10)[8:14]
+	timeSuffix := strconv.FormatInt(time.Now().UnixNano(), 10)[8:14]
 	j.workingDirectory = fmt.Sprintf(tmpDirPattern, j.Id(), timeSuffix)
 	err := os.MkdirAll(j.workingDirectory, 0777)
 	if err != nil {

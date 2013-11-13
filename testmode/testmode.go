@@ -3,9 +3,9 @@ package testmode
 import (
 	"math/rand"
 	"os"
-	"time"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var forceState int

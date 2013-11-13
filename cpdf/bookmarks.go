@@ -1,6 +1,6 @@
 package cpdf
 
-import(
+import (
 	"io/ioutil"
 )
 

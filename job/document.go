@@ -68,6 +68,6 @@ func (doc *Document) Id() string {
 // went wrong instead of just leaving a requested document missing.
 func (doc *Document) writeErrorDocument() {
 	ioutil.WriteFile(doc.LocalPath(), fixtures.BlankDoc, 0644)
-	cpdf.New(doc.LocalPath(),doc.Id()).WriteErrorMessage(doc.Title)
+	cpdf.New(doc.LocalPath(), doc.Id()).WriteErrorMessage(doc.Title)
 	doc.PageCount = 1
 }

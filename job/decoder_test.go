@@ -1,8 +1,8 @@
 package job
 
 import (
-	"github.com/stretchr/testify/assert"
 	"github.com/PeopleAdmin/pdfcombiner/fixtures"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 

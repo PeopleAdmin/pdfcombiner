@@ -4,13 +4,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
-	"strings"
-	"testing"
-	"sync"
 	"os"
+	"strings"
+	"sync"
+	"testing"
 )
 
-func init(){
+func init() {
 	os.Setenv("NO_HTTP_AUTH", "true")
 }
 

@@ -5,14 +5,14 @@
 package job
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
+	"io"
 	"launchpad.net/goamz/s3"
 	"strings"
 	"time"
-	"crypto/sha1"
-	"encoding/hex"
-	"io"
 )
 
 // A Job includes all the data necessary to execute a pdf combination.
@@ -128,8 +128,8 @@ func (j *Job) setup() (err error) {
 // Hash the callback into six characters for ease of logging.
 func (j *Job) mkUuid() {
 	h := sha1.New()
-  io.WriteString(h, j.Callback)
-  j.uuid = hex.EncodeToString(h.Sum(nil)[2:5])
+	io.WriteString(h, j.Callback)
+	j.uuid = hex.EncodeToString(h.Sum(nil)[2:5])
 }
 
 func (j *Job) Id() string {
@@ -144,7 +144,7 @@ func (j *Job) s3Connect() (err error) {
 
 // Point each Document's parent pointer to the enclosing job.
 func (j *Job) setDocParents() {
-	for i, _ := range j.DocList {
+	for i := range j.DocList {
 		j.DocList[i].parent = j
 	}
 }
