@@ -297,7 +297,7 @@
       "Properties" : {
         "AdjustmentType" : "ChangeInCapacity",
         "AutoScalingGroupName" : { "Ref" : "AppServerGroup" },
-        "Cooldown" : "300",
+        "Cooldown" : "1200",
         "ScalingAdjustment" : "-1"
       }
     },
@@ -325,13 +325,13 @@
     "QueueLowScaleDown": {
      "Type": "AWS::CloudWatch::Alarm",
      "Properties": {
-        "AlarmDescription": "Scale-down if all queues < 10 for 10 minutes",
+        "AlarmDescription": "Scale-down if all queues < 20 for 20 minutes",
         "MetricName": "JobsWaiting",
         "Namespace": "pdfcombiner",
         "Statistic": "Maximum",
         "Period": "60",
-        "EvaluationPeriods": "10",
-        "Threshold": "10",
+        "EvaluationPeriods": "30",
+        "Threshold": "20",
         "AlarmActions": [ { "Ref": "AppServerScaleDownPolicy" } ],
         "Dimensions": [
           {
