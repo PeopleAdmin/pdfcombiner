@@ -73,8 +73,7 @@ func startSqsSender(incoming <-chan sqs.Message) {
 // total batch size must also by less than 256KB, which we risk hitting with a
 // few large docs.
 func sendToSqs(message sqs.Message) {
-	response, err := queue.SendMessageBatch([]sqs.Message{message})
-	println(response)
+	_, err := queue.SendMessageBatch([]sqs.Message{message})
 	if err != nil {
 		log.Println(message.MessageId, "Couldn't send to SQS, processing locally:", err)
 		j, _ := job.NewFromJSON([]byte(message.Body))
