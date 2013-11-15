@@ -79,7 +79,6 @@ func sendToSqs(message sqs.Message) {
 		log.Println(message.MessageId, "Couldn't send to SQS, processing locally:", err)
 		j, _ := job.NewFromJSON([]byte(message.Body))
 		j.Setup()
-		// DANGEROUS!  this doesn't register the job with CombinerServer, need to fix
 		go combiner.Combine(j)
 	}
 }
