@@ -24,6 +24,11 @@
       "Type" : "String",
       "Default" : "pdfcombiner"
     },
+    "SqsQueueName" : {
+      "Description" : "The SQS queue name to send overflow messages to",
+      "Type" : "String",
+      "Default" : "pdfcombiner"
+    },
     "SecurityGroup" : {
       "Description" : "The security group for instances to belong to.  Make sure the ELB is included!",
       "Type" : "String",
@@ -305,8 +310,28 @@
     "QueueHighScaleUp": {
      "Type": "AWS::CloudWatch::Alarm",
      "Properties": {
-        "AlarmDescription": "Scale-up if any queue > 100 for 1 minute",
-        "MetricName": "JobsWaiting",
+        "AlarmDescription": "Scale-up if the overflow queue is nonempty for 5 minutes (SQS reporting is too granular, this is a fallback)",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Statistic": "Average",
+        "Period": "60",
+        "EvaluationPeriods": "1",
+        "Threshold": "100",
+        "AlarmActions": [ { "Ref": "AppServerScaleUpPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": { "Ref": "SqsQueueName" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "SpikeDetector": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Scale up if we receive a significantly higher number of messages than we process",
+        "MetricName": "ExcessRequestsPerMinute",
         "Namespace": "pdfcombiner",
         "Statistic": "Maximum",
         "Period": "60",
