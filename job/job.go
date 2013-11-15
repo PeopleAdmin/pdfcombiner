@@ -15,6 +15,10 @@ import (
 	"time"
 )
 
+// By default, mark incoming jobs as having arrived via an http POST.  One
+// possible alternative is having been imported via SQS.
+const DefaultSource = "HTTP"
+
 // A Job includes all the data necessary to execute a pdf combination.
 // It is mainly constructed from a JSON string in a HTTP request, but the
 // last two fields contain internal state.
@@ -33,6 +37,7 @@ type Job struct {
 	receivedAt       time.Time
 	DequeuedAt       time.Time
 	DownloadsDoneAt  time.Time
+	Source           Source
 }
 
 type Documents []*Document
@@ -117,6 +122,7 @@ func (j *Job) Dir() string {
 // Initialize the fields which don't have usable zero-values.
 func (j *Job) Setup() (err error) {
 	j.receivedAt = time.Now()
+	j.Source.SetDefault()
 	err = j.s3Connect()
 	j.Downloaded = make([]*Document, 0, len(j.DocList))
 	j.Errors = make([]error, 0, len(j.DocList))

@@ -58,5 +58,6 @@ func TestJobCompletion(t *testing.T) {
 func newFromString(in string) (newJob *Job, err error) {
 	json := []byte(in)
 	newJob, err = NewFromJSON(json)
+	newJob.Setup()
 	return
 }

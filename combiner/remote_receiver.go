@@ -40,6 +40,7 @@ func locallyEnqueue(message sqs.Message) {
 		log.Printf("ERROR! can't deserialize %v from sqs: %v\n", message.MessageId, err)
 	}
 	j.Setup()
+	j.Source.SetOverflow()
 	debug("Trying to locally enqueue", j.Id(), "callback:", j.Callback)
 	if deleteFromSqs(&message) {
 		go Combine(j)
