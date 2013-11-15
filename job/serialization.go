@@ -36,6 +36,7 @@ func NewFromJSON(encoded []byte) (newJob *Job, err error) {
 		err = errors.New("missing required fields")
 		return
 	}
+	newJob.mkUuid()
 	return
 }
 
