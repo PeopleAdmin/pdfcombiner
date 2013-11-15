@@ -2,7 +2,6 @@ package job
 
 import (
 	"github.com/stretchr/testify/assert"
-	"strings"
 	"testing"
 )
 
@@ -57,7 +56,7 @@ func TestJobCompletion(t *testing.T) {
 }
 
 func newFromString(in string) (newJob *Job, err error) {
-	json := strings.NewReader(in)
+	json := []byte(in)
 	newJob, err = NewFromJSON(json)
 	return
 }
