@@ -34,10 +34,17 @@ func PollSqsForJobs() {
 	}
 }
 
+// Here's a place where something like exceptional would come in handy --
+// we can't notify the client if deserialization fails because the client
+// callback url is in the message.  We do want to delete the message though,
+// because if we couldn't decode it, no one else will be able to.
 func locallyEnqueue(message sqs.Message) {
 	j, err := job.NewFromJSON([]byte(message.Body))
 	if err != nil {
-		log.Printf("ERROR! can't deserialize %v from sqs: %v\n", message.MessageId, err)
+		log.Printf("ERROR can't deserialize %v from sqs: %v. "+
+			"Full message:\n%s\n", message.MessageId, err, message.Body)
+		deleteFromSqs(&message)
+		return
 	}
 	j.Setup()
 	j.Source.SetOverflow()
