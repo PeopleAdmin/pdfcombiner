@@ -58,7 +58,7 @@ func (c CombinerServer) ProcessJob(w http.ResponseWriter, r *http.Request) {
 	if !authenticate(w, r) {
 		return
 	}
-	j, err := dispatchNewJob(r, c)
+	j, err := dispatchNewJob(r)
 	if err != nil || !j.IsValid() {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(invalidMessage)

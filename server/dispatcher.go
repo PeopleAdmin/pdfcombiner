@@ -42,7 +42,7 @@ func init() {
 
 // Decides whether to locally enqueue a job with Combiner or to send it to SQS
 // to be handled by shared processing capacity.
-func dispatchNewJob(r *http.Request, c CombinerServer) (j *job.Job, err error) {
+func dispatchNewJob(r *http.Request) (j *job.Job, err error) {
 	jobContent, err := ioutil.ReadAll(r.Body)
 	j, err = job.NewFromJSON(jobContent)
 	logJobReceipt(r, j)
@@ -51,14 +51,10 @@ func dispatchNewJob(r *http.Request, c CombinerServer) (j *job.Job, err error) {
 		log.Printf("%v Local queue length above %v, sending to SQS", j.Id(), queueSize)
 		sqsTransmissions <- sqs.Message{MessageId: j.Id(), Body: string(jobContent)}
 	} else {
-		executeNow(c, j)
+		j.Setup()
+		go combiner.Combine(j)
 	}
 	return
-}
-
-func executeNow(c CombinerServer, j *job.Job) {
-	j.Setup()
-	go combiner.Combine(j)
 }
 
 func startSqsSender(incoming <-chan sqs.Message) {
