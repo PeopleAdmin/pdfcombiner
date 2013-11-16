@@ -9,9 +9,6 @@ import (
 	"time"
 )
 
-// How long to wait after receiving from an empty queue.  If the queue is
-// nonempty, it will be pulled from continuously.
-const sqsReceiveInterval = 30 * time.Second
 const minCountBeforeReceive = 20
 
 var queue *sqs.Queue
@@ -22,13 +19,13 @@ func PollSqsForJobs() {
 			debug("Checking SQS for new messages")
 			resp, err := queue.ReceiveMessage(10)
 			if err != nil {
-				log.Println("ERROR! Couldn't receive messages from SQS", err)
-				sleep()
-				continue
-			}
-			debug("got", len(resp.Messages), "messages")
-			for _, message := range resp.Messages {
-				locallyEnqueue(message)
+				log.Println("ERROR Couldn't receive messages from SQS:", err)
+				time.Sleep(60 * time.Second)
+			} else {
+				debug("got", len(resp.Messages), "messages")
+				for _, message := range resp.Messages {
+					locallyEnqueue(message)
+				}
 			}
 		}
 	}
@@ -47,7 +44,6 @@ func locallyEnqueue(message sqs.Message) {
 		return
 	}
 	j.Setup()
-	j.Source.SetOverflow()
 	debug("Trying to locally enqueue", j.Id(), "callback:", j.Callback)
 	if deleteFromSqs(&message) {
 		go Combine(j)
@@ -63,10 +59,6 @@ func deleteFromSqs(message *sqs.Message) bool {
 	}
 	debug(message.MessageId, "deleted")
 	return true
-}
-
-func sleep() {
-	time.Sleep(sqsReceiveInterval)
 }
 
 func debug(args ...interface{}) {
