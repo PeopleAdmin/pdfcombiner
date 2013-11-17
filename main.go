@@ -11,7 +11,7 @@ import (
 	"github.com/PeopleAdmin/pdfcombiner/monitoring"
 	"github.com/PeopleAdmin/pdfcombiner/server"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
-	"launchpad.net/goamz/aws"
+	"github.com/crowdmob/goamz/aws"
 	"os"
 )
 

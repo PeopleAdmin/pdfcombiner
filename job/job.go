@@ -9,8 +9,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
+	"github.com/crowdmob/goamz/s3"
 	"io"
-	"launchpad.net/goamz/s3"
 	"strings"
 	"time"
 )

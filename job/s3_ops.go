@@ -3,9 +3,9 @@ package job
 import (
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
+	"github.com/crowdmob/goamz/aws"
+	"github.com/crowdmob/goamz/s3"
 	"io/ioutil"
-	"launchpad.net/goamz/aws"
-	"launchpad.net/goamz/s3"
 	"log"
 	"os"
 )
@@ -44,7 +44,7 @@ func (j *Job) UploadCombinedFile() (err error) {
 		j.AddError(fmt.Errorf("reading file '%v' for upload: %v", j.LocalPath(), err))
 		return
 	}
-	err = j.bucket.Put(j.CombinedKey, content, "application/pdf", uploadedFilePermission)
+	err = j.bucket.Put(j.CombinedKey, content, "application/pdf", uploadedFilePermission, s3.Options{})
 	if err != nil {
 		j.AddError(fmt.Errorf("uploading to S3 key '%s': %v", j.CombinedKey, err))
 		return
