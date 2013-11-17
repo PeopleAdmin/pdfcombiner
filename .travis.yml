@@ -6,6 +6,7 @@ env:
   - AWS_ACCESS_KEY_ID=FAKE
   - AWS_SECRET_ACCESS_KEY=FAKE
   - NO_HTTP_AUTH=true
+  - TEST_MODE=true
 before_install:
 - go get -v github.com/stretchr/testify
 - touch ~/cpdf && chmod +x ~/cpdf
