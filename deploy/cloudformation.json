@@ -307,16 +307,36 @@
       }
     },
 
-    "QueueHighScaleUp": {
+    "MainQueueHighScaleUpAlarm": {
      "Type": "AWS::CloudWatch::Alarm",
      "Properties": {
-        "AlarmDescription": "Scale-up if the overflow queue is nonempty for 5 minutes (SQS reporting is too granular, this is a fallback)",
-        "MetricName": "ApproximateNumberOfMessagesVisible",
-        "Namespace": "AWS/SQS",
+        "AlarmDescription": "Scale up if the SQS API reports a large overflow queue",
+        "MetricName": "GlobalQueueLength",
+        "Namespace": "pdfcombiner",
         "Statistic": "Average",
         "Period": "60",
         "EvaluationPeriods": "1",
-        "Threshold": "100",
+        "Threshold": "30",
+        "AlarmActions": [ { "Ref": "AppServerScaleUpPolicy" } ],
+        "Dimensions": [
+          {
+            "Name": "StackName",
+            "Value": { "Ref": "AWS::StackName" }
+          }
+        ],
+        "ComparisonOperator": "GreaterThanThreshold"
+      }
+    },
+    "FallbackQueueHighScaleUpAlarm": {
+     "Type": "AWS::CloudWatch::Alarm",
+     "Properties": {
+        "AlarmDescription": "Scale up if Cloudwatch reports a large overflow queue (CW is 5min behind SQS -- this is redundant in case something goes wrong with MainQueueHighScaleUpAlarm)",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Namespace": "AWS/SQS",
+        "Statistic": "Average",
+        "Period": "300",
+        "EvaluationPeriods": "2",
+        "Threshold": "50",
         "AlarmActions": [ { "Ref": "AppServerScaleUpPolicy" } ],
         "Dimensions": [
           {
@@ -336,7 +356,7 @@
         "Statistic": "Maximum",
         "Period": "60",
         "EvaluationPeriods": "1",
-        "Threshold": "100",
+        "Threshold": "300",
         "AlarmActions": [ { "Ref": "AppServerScaleUpPolicy" } ],
         "Dimensions": [
           {
@@ -350,8 +370,8 @@
     "QueueLowScaleDown": {
      "Type": "AWS::CloudWatch::Alarm",
      "Properties": {
-        "AlarmDescription": "Scale-down if all queues < 20 for 20 minutes",
-        "MetricName": "JobsWaiting",
+        "AlarmDescription": "Scale-down if the overflow queue < 10 for 10 minutes",
+        "MetricName": "GlobalQueueLength",
         "Namespace": "pdfcombiner",
         "Statistic": "Maximum",
         "Period": "60",

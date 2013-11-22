@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 var maxQueue = 30
@@ -18,7 +19,7 @@ var queueName string
 var queue *sqs.Queue
 
 func init() {
-	if sqsEnabled() {
+	if SqsEnabled() {
 		auth, err := aws.EnvAuth()
 		if err != nil {
 			fmt.Println("SQS connect failed:", err)
@@ -78,7 +79,28 @@ func sendToSqs(message sqs.Message) {
 	}
 }
 
-func sqsEnabled() bool {
+func SqsEnabled() bool {
 	queueName = os.Getenv("SQS_QUEUE_NAME")
 	return os.Getenv("SQS_ENABLED") != "" && queueName != ""
+}
+
+// Get the current queue length directly from the SQS api, which is
+// near-real-time, as opposed to the CloudWatch equivalent of this metric,
+// which is delayed by at least five minutes.
+func CurrentQueueLength() int {
+	metricName := "ApproximateNumberOfMessages"
+	invalid := -1
+	resp, err := queue.GetQueueAttributes(metricName)
+	if err != nil {
+		return invalid
+	}
+	countAttr := resp.Attributes[0]
+	if countAttr.Name != metricName {
+		return invalid
+	}
+	count, err := strconv.Atoi(countAttr.Value)
+	if err != nil {
+		return invalid
+	}
+	return count
 }

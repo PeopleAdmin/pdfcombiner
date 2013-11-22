@@ -4,6 +4,7 @@ package monitoring
 import (
 	"github.com/PeopleAdmin/gomon"
 	"github.com/PeopleAdmin/pdfcombiner/combiner"
+	"github.com/PeopleAdmin/pdfcombiner/server"
 	"log"
 	"os"
 )
@@ -18,6 +19,9 @@ func StartMetricSender() {
 	gomon.RegisterDeltaInt("RequestsReceivedPerMinute", 60, "Count", combiner.TotalJobsReceived)
 	gomon.RegisterDeltaInt("RequestsFinishedPerMinute", 60, "Count", combiner.TotalJobsFinished)
 	gomon.Register("ExcessRequestsPerMinute", 60, "Count", excessJobsMetric())
+	if server.SqsEnabled() {
+		gomon.RegisterInt("GlobalQueueLength", 60, "Count", server.CurrentQueueLength)
+	}
 
 	// System metrics
 	gomon.Register("DiskFree", 60, "Megabytes", gomon.RootPartitionFree)
