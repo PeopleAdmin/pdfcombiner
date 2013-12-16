@@ -4,6 +4,7 @@ import (
 	"github.com/PeopleAdmin/pdfcombiner/cpdf"
 	"github.com/PeopleAdmin/pdfcombiner/fixtures"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 )
 
@@ -30,8 +31,20 @@ func (doc *Document) LocalPath() string {
 	return doc.parent.workingDirectory + strings.Replace(doc.Key, "/", "_", -1)
 }
 
+func (doc *Document) KeyNameIsValid() bool {
+	return doc.hasName() && doc.hasPdfExtension()
+}
+
 func (doc *Document) isValid() bool {
-	return doc.Key != ""
+	return doc.KeyNameIsValid()
+}
+
+func (doc *Document) hasPdfExtension() bool {
+	return filepath.Ext(doc.Key) == ".pdf"
+}
+
+func (doc *Document) hasName() bool {
+	return len(doc.Key) > 4
 }
 
 // Given a slice of document names, return a slice of Documents.

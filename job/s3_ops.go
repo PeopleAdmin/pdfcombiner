@@ -1,6 +1,7 @@
 package job
 
 import (
+	"errors"
 	"fmt"
 	"github.com/PeopleAdmin/pdfcombiner/testmode"
 	"io/ioutil"
@@ -18,6 +19,9 @@ var (
 // Get retrieves the requested document, either from S3 or by decoding the
 // embedded `Data` attribute of the Document.
 func (doc *Document) Get() (docContent []byte, err error) {
+	if !doc.KeyNameIsValid() {
+		return docContent, errors.New("Key indicates that file is not a pdf")
+	}
 	log.Printf("%s GET s3://%s/%s\n", doc.Id(), doc.parent.BucketName, doc.s3Path())
 	if testmode.IsEnabled() {
 		return

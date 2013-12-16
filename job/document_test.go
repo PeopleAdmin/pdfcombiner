@@ -6,8 +6,19 @@ import (
 )
 
 func TestDocValidation(t *testing.T) {
-	invalidDoc := &Document{}
-	validDoc := &Document{Key: "Something"}
-	assert.False(t, invalidDoc.isValid(), "Invalid Doc should not validate")
-	assert.True(t, validDoc.isValid(), "Valid Doc should validate")
+	var cases = []struct {
+		keyName  string
+		validity bool
+		message  string
+	}{
+		{"", false, "Empty strings are not valid keys"},
+		{"Something", false, "Keys without extensions are not valid"},
+		{"pdf", false, "Just because a string has pdf does not mean it is valid"},
+		{".pdf", false, "A string without a basename is not a valid key"},
+		{"file.pdf", true, "A string with a name and a pdf extension is a valid key"},
+	}
+	for _, c := range cases {
+		doc := &Document{Key: c.keyName}
+		assert.Equal(t, doc.isValid(), c.validity, c.message)
+	}
 }
