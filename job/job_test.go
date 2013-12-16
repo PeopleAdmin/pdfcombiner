@@ -13,15 +13,26 @@ func TestJobValidation(t *testing.T) {
 	invalidJob := &Job{}
 	assert.False(t, invalidJob.IsValid(), "Job should not validate when inputs are invalid")
 	newJob := &Job{
-		Callback:   "http://blah.com",
-		BucketName: "A",
-		DocList:    make([]Document, 0),
+		Callback:    "http://blah.com",
+		BucketName:  "A",
+		DocList:     make([]Document, 0),
+		CombinedKey: "out.pdf",
 	}
 	assert.False(t, newJob.IsValid(), "Job should not validate with an empty doclist")
 	newJob.DocList = append(newJob.DocList, Document{Key: "doc.pdf"})
+	newJob.CombinedKey = ""
 	assert.False(t, newJob.IsValid(), "Job should not validate with a missing upload key")
 	newJob.CombinedKey = "out.pdf"
 	assert.True(t, newJob.IsValid(), "Job should validate when inputs are valid")
+	newJob.DocList = append(newJob.DocList, Document{})
+	assert.True(t, newJob.IsValid(), "Jobs should validate with mixed valid and invalid docs")
+	jobWithInvalidDoc := &Job{
+		Callback:    "http://blah.com",
+		BucketName:  "A",
+		DocList:     []Document{Document{Key: ""}},
+		CombinedKey: "out.pdf",
+	}
+	assert.False(t, jobWithInvalidDoc.IsValid(), "Jobs should not validate with only invalid documents")
 }
 
 func TestJobJSONDeserialization(t *testing.T) {

@@ -56,16 +56,15 @@ func (j *Job) IsValid() bool {
 		j.DocsAreValid()
 }
 
+// Does the job have at least one retrievable document?
 func (j *Job) DocsAreValid() bool {
-	if j.DocCount() <= 0 {
-		return false
-	}
+	validCount := 0
 	for _, doc := range j.DocList {
-		if !doc.isValid() {
-			return false
+		if doc.isValid() {
+			validCount += 1
 		}
 	}
-	return true
+	return validCount > 0
 }
 
 // DocCount returns the number of documents requested.
