@@ -1,6 +1,6 @@
 ---
 language: go
-go: 1.1
+go: 1.2
 env:
   global:
   - AWS_ACCESS_KEY_ID=FAKE
@@ -10,8 +10,12 @@ before_install:
 - go get -v github.com/stretchr/testify
 - touch ~/cpdf && chmod +x ~/cpdf
 - export PATH=$HOME:$PATH
+install:
+- export PATH=$PATH:$HOME/gopath/bin
+- go get -v -u github.com/tools/godep
+- godep go build -v ./...
 script:
-- go test -v ./...
+- godep go test ./...
 notifications:
   email: false
   campfire:

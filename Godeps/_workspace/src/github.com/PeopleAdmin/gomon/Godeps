@@ -1,0 +1,36 @@
+{
+	"ImportPath": "github.com/PeopleAdmin/gomon",
+	"GoVersion": "go1.3.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/crowdmob/goamz/aws",
+			"Rev": "bfa553e3b7d6416a36cb81ff5f379acfb9b93f0d"
+		},
+		{
+			"ImportPath": "github.com/crowdmob/goamz/cloudwatch",
+			"Rev": "bfa553e3b7d6416a36cb81ff5f379acfb9b93f0d"
+		},
+		{
+			"ImportPath": "github.com/feyeleanor/raw",
+			"Rev": "724aedf6e1a5d8971aafec384b6bde3d5608fba4"
+		},
+		{
+			"ImportPath": "github.com/feyeleanor/sets",
+			"Rev": "6c54cb57ea406ff6354256a4847e37298194478f"
+		},
+		{
+			"ImportPath": "github.com/feyeleanor/slices",
+			"Rev": "bb44bb2e4817fe71ba7082d351fd582e7d40e3ea"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo",
+			"Comment": "v1.1.0-12-g90d6a47",
+			"Rev": "90d6a472e25d8096739d5405286ec051c87fade7"
+		},
+		{
+			"ImportPath": "github.com/onsi/gomega",
+			"Comment": "v1.0-12-g3ca2515",
+			"Rev": "3ca2515afb00bc39bc77d27cdbce85a7caaf103e"
+		}
+	]
+}

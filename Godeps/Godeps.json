@@ -1,0 +1,45 @@
+{
+	"ImportPath": "github.com/PeopleAdmin/pdfcombiner",
+	"GoVersion": "go1.3.1",
+	"Deps": [
+		{
+			"ImportPath": "bitbucket.org/taruti/http_auth",
+			"Comment": "null-17",
+			"Rev": "b2ef9184b00e4837025955e66df878c8123a38fc"
+		},
+		{
+			"ImportPath": "github.com/PeopleAdmin/gomon",
+			"Rev": "39d87b7c621a70eb12cf304a5dc9273a454559c1"
+		},
+		{
+			"ImportPath": "github.com/crowdmob/goamz/aws",
+			"Rev": "bfa553e3b7d6416a36cb81ff5f379acfb9b93f0d"
+		},
+		{
+			"ImportPath": "github.com/crowdmob/goamz/cloudwatch",
+			"Rev": "bfa553e3b7d6416a36cb81ff5f379acfb9b93f0d"
+		},
+		{
+			"ImportPath": "github.com/feyeleanor/raw",
+			"Rev": "724aedf6e1a5d8971aafec384b6bde3d5608fba4"
+		},
+		{
+			"ImportPath": "github.com/feyeleanor/sets",
+			"Rev": "6c54cb57ea406ff6354256a4847e37298194478f"
+		},
+		{
+			"ImportPath": "github.com/feyeleanor/slices",
+			"Rev": "bb44bb2e4817fe71ba7082d351fd582e7d40e3ea"
+		},
+		{
+			"ImportPath": "launchpad.net/goamz/aws",
+			"Comment": "49",
+			"Rev": "martin.packman@canonical.com-20140813150539-umttn7s536u85eiz"
+		},
+		{
+			"ImportPath": "launchpad.net/goamz/s3",
+			"Comment": "49",
+			"Rev": "martin.packman@canonical.com-20140813150539-umttn7s536u85eiz"
+		}
+	]
+}

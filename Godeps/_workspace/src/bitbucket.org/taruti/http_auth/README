@@ -1,0 +1,5 @@
+http_auth
+=========
+
+Interface to using server side http digest authentication.
+
